@@ -1,0 +1,192 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            background-color: #050505;
+            background: radial-gradient(circle at center, #000814 0%, #000000 100%);
+            color: #ffffff;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .modal {
+            width: 360px;
+            background: rgba(10, 10, 10, 0.95);
+            border: 1px solid rgba(0, 162, 255, 0.1);
+            position: relative;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 8px;
+            color: #555;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+            letter-spacing: 2px;
+        }
+
+        .input-group input {
+            width: 100%;
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid #222;
+            color: #fff;
+            padding: 8px 0;
+            font-family: inherit;
+            font-size: 13px;
+            outline: none;
+            transition: all 0.3s;
+        }
+
+        .input-group input:focus {
+            border-bottom: 1px solid #00a2ff;
+        }
+
+        .options {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 25px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            font-size: 9px;
+            color: #666;
+            cursor: pointer;
+        }
+
+        .checkbox-group input {
+            margin-right: 8px;
+            accent-color: #00a2ff;
+        }
+
+        button {
+            width: 100%;
+            padding: 15px;
+            background: #00a2ff;
+            border: none;
+            color: #000;
+            font-family: inherit;
+            font-weight: bold;
+            font-size: 10px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        button:hover {
+            background: #00c2ff;
+            box-shadow: 0 0 20px rgba(0, 162, 255, 0.3);
+        }
+
+        .disclaimer {
+            margin-top: 10px;
+            font-size: 9px;
+            color: #666;
+            line-height: 1.4;
+            text-align: center;
+        }
+
+        .status-area {
+            margin-top: 25px;
+            font-size: 9px;
+            color: #444;
+            text-align: center;
+            height: 12px;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+    <div class="modal">
+        <div class="content">
+            <div id="login-form">
+                <div class="input-group">
+                    <label>Identificador</label>
+                    <input type="text" id="l-user" placeholder="E-MAIL" spellcheck="false">
+                </div>
+                <div class="input-group">
+                    <label>Senha</label>
+                    <input type="password" id="l-pass" placeholder="********">
+                </div>
+
+                <div class="options">
+                    <label class="checkbox-group">
+                        <input type="checkbox" id="save-user"> Salvar E-mail
+                    </label>
+                    <label class="checkbox-group">
+                        <input type="checkbox" id="save-pass"> Salvar Senha
+                    </label>
+                </div>
+
+                <button onclick="handleLogin()">LOGIN E REGISTRO*</button>
+                <div class="disclaimer">* : ao clicar em registrar voce aceita os termos ...</div>
+            </div>
+
+            <div id="status" class="status-area">Terminal Pronto.</div>
+        </div>
+    </div>
+
+    <script>
+        // Carregar dados salvos
+        window.onload = () => {
+            const savedUser = localStorage.getItem('og_user');
+            const savedPass = localStorage.getItem('og_pass');
+
+            if (savedUser) {
+                document.getElementById('l-user').value = savedUser;
+                document.getElementById('save-user').checked = true;
+            }
+            if (savedPass) {
+                document.getElementById('l-pass').value = savedPass;
+                document.getElementById('save-pass').checked = true;
+            }
+        };
+
+        function setStatus(text, color = '#444') {
+            const el = document.getElementById('status');
+            el.innerText = text.toUpperCase();
+            el.style.color = color;
+        }
+
+        function handleLogin() {
+            const u = document.getElementById('l-user').value;
+            const p = document.getElementById('l-pass').value;
+            if (!u || !p) return setStatus("Erro: Campos Vazios", "#ff4444");
+
+            // Persistencia
+            if (document.getElementById('save-user').checked) localStorage.setItem('og_user', u);
+            else localStorage.removeItem('og_user');
+
+            if (document.getElementById('save-pass').checked) localStorage.setItem('og_pass', p);
+            else localStorage.removeItem('og_pass');
+
+            setStatus("Autenticando...", "#00a2ff");
+            if (window.login) login(u, p);
+        }
+
+        window.setAuthStatus = (msg, success) => {
+            setStatus(msg, success ? "#00ff88" : "#ff4444");
+        };
+    </script>
+</body>
+</html>

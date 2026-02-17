@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            background-color: #000000;
+            background: radial-gradient(circle at center, #000814 0%, #000000 100%);
+            color: #ffffff;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .spinner-wrap {
+            position: relative;
+            width: 70px;
+            height: 70px;
+            margin-bottom: 40px;
+        }
+
+        .ring-bg {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border: 1px solid rgba(0, 162, 255, 0.05);
+            border-radius: 50%;
+            box-sizing: border-box;
+        }
+
+        .ring-active {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border: 2px solid transparent;
+            border-top: 2px solid #00a2ff;
+            border-radius: 50%;
+            box-sizing: border-box;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .log-container {
+            width: 450px;
+            height: 90px;
+            border-left: 1px solid rgba(0, 162, 255, 0.2);
+            padding-left: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            overflow: hidden;
+            margin-bottom: 25px;
+        }
+
+        .log-line {
+            font-size: 9px;
+            line-height: 1.6;
+            letter-spacing: 1px;
+            color: #444;
+            text-transform: uppercase;
+            animation: fadeIn 0.2s forwards;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        .log-line.active { color: #00a2ff; font-weight: bold; }
+        .log-line.success { color: #00ff88; }
+
+        .progress-wrap {
+            width: 450px;
+            height: 1px;
+            background: rgba(255, 255, 255, 0.03);
+            position: relative;
+        }
+
+        #bar {
+            position: absolute;
+            height: 100%;
+            width: 0%;
+            background: #00a2ff;
+            transition: width 0.1s linear;
+            box-shadow: 0 0 10px #00a2ff;
+        }
+
+        .timestamp { color: rgba(255, 255, 255, 0.1); margin-right: 10px; }
+    </style>
+</head>
+<body>
+    <div class="spinner-wrap">
+        <div class="ring-bg"></div>
+        <div class="ring-active"></div>
+    </div>
+
+    <div class="log-container" id="log-box">
+        <div class="log-line active">AGUARDANDO INICIALIZACAO DO CORE...</div>
+    </div>
+
+    <div class="progress-wrap">
+        <div id="bar"></div>
+    </div>
+
+    <script>
+        const logBox = document.getElementById('log-box');
+        const bar = document.getElementById('bar');
+
+        window.setProgress = (p) => {
+            bar.style.width = p + '%';
+        };
+
+        window.setStatus = (msg) => {
+            const line = document.createElement('div');
+            const isSuccess = msg.includes('OK') || msg.includes('CONCLUIDO') || msg.includes('OPERACIONAL');
+            line.className = 'log-line ' + (isSuccess ? 'success' : 'active');
+            
+            const now = new Date();
+            const time = now.getHours().toString().padStart(2, '0') + ":" + 
+                         now.getMinutes().toString().padStart(2, '0') + ":" + 
+                         now.getSeconds().toString().padStart(2, '0');
+
+            line.innerHTML = `<span class="timestamp">[${time}]</span> ${msg.toUpperCase()}`;
+            logBox.appendChild(line);
+
+            if (logBox.childNodes.length > 6) {
+                logBox.removeChild(logBox.firstChild);
+            }
+        };
+    </script>
+</body>
+</html>

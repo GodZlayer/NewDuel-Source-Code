@@ -1,0 +1,447 @@
+﻿<!DOCTYPE html>
+<html style="background: transparent !important;">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        * { background: transparent !important; }
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            color: #ffffff;
+            font-family: 'Consolas', monospace;
+        }
+
+        .screen-header {
+            padding: 30px;
+            background: rgba(0,0,0,0.7) !important;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(0, 162, 255, 0.3);
+        }
+
+        .title {
+            font-size: 16px;
+            letter-spacing: 8px;
+            color: #ffffff;
+            text-transform: uppercase;
+        }
+
+        .main-layout {
+            flex: 1;
+            display: flex;
+            padding: 40px;
+            align-items: flex-end;
+        }
+
+        .char-list {
+            width: 350px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            background: rgba(0, 0, 0, 0.5) !important;
+            padding: 20px;
+            border-left: 2px solid #00a2ff;
+        }
+
+        .char-slot {
+            height: 70px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(20, 20, 20, 0.8) !important;
+            display: flex;
+            align-items: center;
+            padding: 0 25px;
+            cursor: pointer;
+        }
+
+        .char-slot.active { border-color: #00a2ff; background: rgba(0, 162, 255, 0.2) !important; }
+        .char-info h2 { font-size: 15px; margin: 0; color: #fff; }
+        .char-info p { font-size: 10px; color: #00a2ff; }
+
+        .controls { position: fixed; bottom: 50px; right: 50px; display: flex; gap: 20px; }
+        button { background: #00a2ff !important; border: none; padding: 18px 50px; color: #000 !important; font-weight: bold; text-transform: uppercase; cursor: pointer; }
+        button:disabled { background: #222 !important; color: #444 !important; }
+        .btn-danger { background: #9b2d2d !important; color: #fff !important; }
+        .btn-danger:hover { background: #c03737 !important; }
+
+        .status { position: fixed; left: 40px; bottom: 24px; font-size: 12px; color: #7fc7ff; max-width: 60vw; }
+
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: transparent !important;
+            display: none;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 64px;
+            z-index: 10;
+        }
+
+        .modal-backdrop.open { display: flex; }
+
+        .modal {
+            width: 420px;
+            background: rgba(8, 12, 18, 0.95) !important;
+            border: 1px solid rgba(0, 162, 255, 0.6);
+            padding: 20px;
+        }
+
+        .modal h3 { margin: 0 0 14px 0; font-size: 14px; letter-spacing: 1px; }
+        .modal label { display: block; margin: 8px 0 6px 0; font-size: 11px; color: #89b9d6; }
+
+        .modal input, .modal select {
+            width: 100%;
+            box-sizing: border-box;
+            border: 1px solid rgba(255,255,255,0.2);
+            padding: 10px;
+            color: #fff;
+            background: rgba(0,0,0,0.45) !important;
+            outline: none;
+        }
+
+        .modal-note {
+            font-size: 11px;
+            color: #cfd7de;
+            margin-bottom: 10px;
+        }
+
+        .modal-note b { color: #ffffff; }
+
+        .modal-actions { margin-top: 16px; display: flex; justify-content: flex-end; gap: 10px; }
+        .btn-secondary { background: #2a2a2a !important; color: #ddd !important; }
+        .empty-hint { color: #707070; }
+    </style>
+</head>
+<body>
+    <div class="screen-header">
+        <div class="title">AGENTE_REDE_ESTAVEL</div>
+        <div id="account-status" style="font-size: 10px; color: #00ff88;">ESTADO: CONECTADO</div>
+    </div>
+
+    <div class="main-layout">
+        <div class="char-list" id="slots"></div>
+    </div>
+
+    <div class="controls">
+        <button id="btn-delete" class="btn-danger" onclick="openDeleteModal()" style="display:none;">DELETAR PERSONAGEM</button>
+        <button id="btn-enter" onclick="handleSelectCharacter()" disabled>ACESSAR AREA DE COMBATE</button>
+    </div>
+    <div id="status" class="status">Selecione um personagem ou clique em um slot vazio para criar.</div>
+
+    <div id="create-modal-backdrop" class="modal-backdrop" onclick="if(event.target===this) closeCreateModal()">
+        <div class="modal" role="dialog" aria-modal="true" aria-label="Criar personagem">
+            <h3>CRIAR PERSONAGEM</h3>
+            <label for="char-name">Nome</label>
+            <input id="char-name" maxlength="16" placeholder="Digite o nome" />
+            <label for="char-sex">Sexo</label>
+            <select id="char-sex">
+                <option value="0">Masculino</option>
+                <option value="1">Feminino</option>
+            </select>
+            <label for="char-face">Rosto</label>
+            <select id="char-face">
+                <option value="0">Rosto 1</option>
+                <option value="1">Rosto 2</option>
+                <option value="2">Rosto 3</option>
+                <option value="3">Rosto 4</option>
+                <option value="4">Rosto 5</option>
+            </select>
+            <label for="char-preset">Preset Inicial</label>
+            <select id="char-preset">
+                <option value="0">Preset 1</option>
+                <option value="1">Preset 2</option>
+                <option value="2">Preset 3</option>
+                <option value="3">Preset 4</option>
+                <option value="4">Preset 5</option>
+                <option value="5">Preset 6</option>
+            </select>
+            <div class="modal-actions">
+                <button class="btn-secondary" onclick="closeCreateModal()">Cancelar</button>
+                <button id="btn-create-confirm" onclick="handleCreateCharacter()">Criar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="delete-modal-backdrop" class="modal-backdrop" onclick="if(event.target===this) closeDeleteModal()">
+        <div class="modal" role="dialog" aria-modal="true" aria-label="Deletar personagem">
+            <h3>CONFIRMAR EXCLUSAO</h3>
+            <div class="modal-note">Digite o nome do personagem para confirmar:</div>
+            <div class="modal-note"><b id="delete-char-name">-</b></div>
+            <label for="delete-confirm-input">Confirmacao</label>
+            <input id="delete-confirm-input" maxlength="16" placeholder="Digite o nome exato" />
+            <div class="modal-actions">
+                <button class="btn-secondary" onclick="closeDeleteModal()">Cancelar</button>
+                <button id="btn-delete-confirm" class="btn-danger" onclick="handleDeleteCharacter()">Deletar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let characters = [];
+        let selectedId = null;
+        let selectedName = '';
+        let creatingInSlot = -1;
+        let isCreatingMode = false;
+
+        function setStatus(text, ok = true) {
+            const el = document.getElementById('status');
+            el.textContent = text;
+            el.style.color = ok ? '#7fc7ff' : '#ff7f7f';
+        }
+
+        function findCharacterById(id) {
+            return characters.find((c) => c.id === id) || null;
+        }
+
+        function updateActionButtons() {
+            const enterBtn = document.getElementById('btn-enter');
+            const deleteBtn = document.getElementById('btn-delete');
+            const hasSelection = !!selectedId;
+            enterBtn.disabled = !hasSelection || isCreatingMode;
+            deleteBtn.style.display = hasSelection && !isCreatingMode ? 'inline-block' : 'none';
+            deleteBtn.disabled = !hasSelection || isCreatingMode;
+        }
+
+        function openCreateModal(slotIndex) {
+            creatingInSlot = slotIndex;
+            isCreatingMode = true;
+            document.body.classList.add('creating');
+            const modal = document.getElementById('create-modal-backdrop');
+            modal.classList.add('open');
+            const nameInput = document.getElementById('char-name');
+            nameInput.value = '';
+            document.getElementById('char-sex').value = '0';
+            document.getElementById('char-face').value = '0';
+            document.getElementById('char-preset').value = '0';
+            updateActionButtons();
+            setStatus(`MODO DE CRIACAO ativo (slot ${slotIndex + 1}). Ajuste sexo/rosto/preset e confirme.`);
+            setTimeout(() => nameInput.focus(), 0);
+            if (window.set_preview_visible) set_preview_visible(true);
+            applyPreviewFromForm();
+        }
+
+        function closeCreateModal() {
+            document.getElementById('create-modal-backdrop').classList.remove('open');
+            creatingInSlot = -1;
+            isCreatingMode = false;
+            document.body.classList.remove('creating');
+            updateActionButtons();
+            if (!selectedId && window.set_preview_visible) set_preview_visible(false);
+        }
+
+        function openDeleteModal() {
+            if (isCreatingMode) {
+                setStatus('Finalize ou cancele o modo de criacao primeiro.', false);
+                return;
+            }
+            if (!selectedId) {
+                setStatus('Selecione um personagem antes de deletar.', false);
+                return;
+            }
+
+            const current = findCharacterById(selectedId);
+            if (!current) {
+                setStatus('Personagem selecionado nao encontrado na lista.', false);
+                return;
+            }
+
+            selectedName = current.name || '';
+            document.getElementById('delete-char-name').textContent = selectedName;
+            const input = document.getElementById('delete-confirm-input');
+            input.value = '';
+            document.getElementById('delete-modal-backdrop').classList.add('open');
+            setTimeout(() => input.focus(), 0);
+            setStatus('Confirme a exclusao digitando o nome do personagem.');
+        }
+
+        function closeDeleteModal() {
+            document.getElementById('delete-modal-backdrop').classList.remove('open');
+            document.getElementById('delete-confirm-input').value = '';
+            document.getElementById('btn-delete-confirm').disabled = false;
+        }
+
+        function handleCreateCharacter() {
+            const name = (document.getElementById('char-name').value || '').trim();
+            const sex = parseInt(document.getElementById('char-sex').value || '0', 10);
+            const face = parseInt(document.getElementById('char-face').value || '0', 10);
+            const preset = parseInt(document.getElementById('char-preset').value || '0', 10);
+            const hair = 0;
+            if (!name) {
+                setStatus('Informe um nome para o personagem.', false);
+                return;
+            }
+            if (!window.create_character) {
+                setStatus('Bridge create_character indisponivel.', false);
+                return;
+            }
+
+            const btn = document.getElementById('btn-create-confirm');
+            btn.disabled = true;
+            setStatus('Criando personagem...');
+            create_character(name, sex, face, preset, hair);
+        }
+
+        function handleDeleteCharacter() {
+            if (!selectedId || !selectedName) {
+                setStatus('Selecione um personagem antes de deletar.', false);
+                return;
+            }
+            if (!window.delete_character) {
+                setStatus('Bridge delete_character indisponivel.', false);
+                return;
+            }
+
+            const typed = (document.getElementById('delete-confirm-input').value || '').trim();
+            if (typed !== selectedName) {
+                setStatus('Nome de confirmacao incorreto.', false);
+                return;
+            }
+
+            const btn = document.getElementById('btn-delete-confirm');
+            btn.disabled = true;
+            setStatus('Deletando personagem...');
+            delete_character(selectedId);
+        }
+
+        function applyPreviewFromForm() {
+            if (!window.set_character_preview) return;
+            const sex = parseInt(document.getElementById('char-sex').value || '0', 10);
+            const face = parseInt(document.getElementById('char-face').value || '0', 10);
+            const preset = parseInt(document.getElementById('char-preset').value || '0', 10);
+            const hair = 0;
+            set_character_preview(sex, face, preset, hair);
+        }
+
+        function handleSelectCharacter() {
+            if (isCreatingMode) {
+                setStatus('Finalize ou cancele o modo de criacao primeiro.', false);
+                return;
+            }
+            if (!selectedId) {
+                setStatus('Selecione um personagem antes de acessar.', false);
+                return;
+            }
+            if (!window.select_character) {
+                setStatus('Bridge select_character indisponivel.', false);
+                return;
+            }
+            setStatus('Selecionando personagem...');
+            select_character(selectedId);
+        }
+
+        window.onload = () => {
+            document.body.tabIndex = 0;
+            document.body.focus();
+            if (window.list_characters) list_characters();
+        };
+
+        document.addEventListener('keydown', (ev) => {
+            const createOpen = document.getElementById('create-modal-backdrop').classList.contains('open');
+            const deleteOpen = document.getElementById('delete-modal-backdrop').classList.contains('open');
+
+            if (createOpen) {
+                if (ev.key === 'Escape') closeCreateModal();
+                else if (ev.key === 'Enter') handleCreateCharacter();
+                return;
+            }
+
+            if (deleteOpen) {
+                if (ev.key === 'Escape') closeDeleteModal();
+                else if (ev.key === 'Enter') handleDeleteCharacter();
+                return;
+            }
+
+            if (ev.key === 'Enter') handleSelectCharacter();
+        });
+
+        document.getElementById('char-sex').addEventListener('change', applyPreviewFromForm);
+        document.getElementById('char-face').addEventListener('change', applyPreviewFromForm);
+        document.getElementById('char-preset').addEventListener('change', applyPreviewFromForm);
+
+        window.onCharacterList = (data) => {
+            characters = data.characters || [];
+
+            if (selectedId && !findCharacterById(selectedId)) {
+                selectedId = null;
+                selectedName = '';
+            }
+
+            const container = document.getElementById('slots');
+            container.innerHTML = '';
+            const maxSlots = 4;
+            const hasFreeSlot = characters.length < maxSlots;
+
+            for (let i = 0; i < 4; i++) {
+                const char = characters[i];
+                const slot = document.createElement('div');
+                if (char) {
+                    slot.className = 'char-slot' + (selectedId === char.id ? ' active' : '');
+                    slot.onclick = () => {
+                        selectedId = char.id;
+                        selectedName = char.name || '';
+                        updateActionButtons();
+                        window.onCharacterList(data);
+                        setStatus(`Selecionado: ${char.name}`);
+                    };
+                    slot.innerHTML = `<div class="char-info"><h2>${char.name.toUpperCase()}</h2><p>LV${char.level}</p></div>`;
+                } else {
+                    slot.className = 'char-slot';
+                    slot.onclick = () => openCreateModal(i);
+                    slot.innerHTML = '<span class="empty-hint">SLOT_VAZIO - clique para criar</span>';
+                }
+                container.appendChild(slot);
+            }
+
+            updateActionButtons();
+
+            if (!isCreatingMode && characters.length === 0 && window.set_preview_visible) {
+                set_preview_visible(false);
+            }
+
+            if (!hasFreeSlot) setStatus('Todos os slots estao ocupados.');
+        };
+
+        window.onCreateCharacterResult = (result) => {
+            const btn = document.getElementById('btn-create-confirm');
+            btn.disabled = false;
+            if (result && result.success) {
+                closeCreateModal();
+                setStatus('Personagem criado com sucesso.');
+            } else {
+                setStatus(`Falha ao criar personagem: ${(result && result.message) ? result.message : 'erro desconhecido'}`, false);
+            }
+        };
+
+        window.onDeleteCharacterResult = (result) => {
+            const btn = document.getElementById('btn-delete-confirm');
+            btn.disabled = false;
+            if (result && result.success) {
+                closeDeleteModal();
+                selectedId = null;
+                selectedName = '';
+                updateActionButtons();
+                setStatus('Personagem deletado com sucesso.');
+            } else {
+                setStatus(`Falha ao deletar: ${(result && result.message) ? result.message : 'erro desconhecido'}`, false);
+            }
+        };
+
+        window.onSelectCharacterResult = (result) => {
+            if (result && result.success) {
+                setStatus('Personagem selecionado. Entrando no lobby...');
+                if (window.enter_lobby) {
+                    enter_lobby();
+                } else {
+                    window.location.href = 'lobby.html';
+                }
+            } else {
+                setStatus(`Falha ao selecionar: ${(result && result.message) ? result.message : 'erro desconhecido'}`, false);
+            }
+        };
+    </script>
+</body>
+</html>

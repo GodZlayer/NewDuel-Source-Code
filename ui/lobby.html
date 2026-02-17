@@ -1,0 +1,1567 @@
+<!DOCTYPE html>
+<html style="background: transparent !important;">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        * { box-sizing: border-box; background: transparent !important; }
+
+        :root {
+            --bg: rgba(6, 10, 16, 0.86);
+            --bg-soft: rgba(9, 14, 22, 0.68);
+            --line: rgba(0, 163, 255, 0.35);
+            --line-soft: rgba(255, 255, 255, 0.1);
+            --text: #e8f3ff;
+            --text-soft: #9fb4c9;
+            --accent: #00a3ff;
+            --accent-2: #46c5ff;
+            --danger: #ff5858;
+            --ok: #4ce28b;
+            --warn: #f4cb63;
+        }
+
+        html, body {
+            margin: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: Consolas, "Courier New", monospace;
+            color: var(--text);
+        }
+
+        .lobby-root {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            padding: 12px;
+            gap: 10px;
+        }
+
+        .top-strip {
+            height: 74px;
+            border: 1px solid var(--line);
+            background: var(--bg) !important;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+        }
+
+        .logo {
+            font-size: 20px;
+            letter-spacing: 4px;
+            color: #ffffff;
+            text-transform: uppercase;
+        }
+
+        .top-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .ghost-btn {
+            min-width: 92px;
+            height: 34px;
+            border: 1px solid var(--line-soft);
+            color: var(--text-soft);
+            background: rgba(16, 24, 34, 0.85) !important;
+            font-size: 11px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            cursor: default;
+        }
+
+        .channel-strip {
+            height: 34px;
+            border: 1px solid var(--line);
+            background: rgba(7, 13, 21, 0.84) !important;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 12px;
+            font-size: 11px;
+            letter-spacing: 1px;
+            color: var(--text-soft);
+        }
+
+        .refresh-btn {
+            height: 24px;
+            padding: 0 10px;
+            border: 1px solid var(--line-soft);
+            color: var(--accent-2);
+            background: rgba(16, 24, 34, 0.95) !important;
+            cursor: pointer;
+            font-size: 10px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .main {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .hidden { display: none !important; }
+
+        .panel {
+            border: 1px solid var(--line);
+            background: var(--bg) !important;
+        }
+
+        .channel-view {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .room-board {
+            flex: 1;
+            min-height: 245px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .room-grid {
+            flex: 1;
+            min-height: 0;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(250px, 1fr));
+            grid-template-rows: repeat(4, minmax(50px, 1fr));
+            gap: 8px;
+        }
+
+        .room-card {
+            border: 1px solid var(--line-soft);
+            background: var(--bg-soft) !important;
+            padding: 8px 10px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            cursor: pointer;
+            min-height: 0;
+        }
+
+        .room-card:hover { border-color: rgba(70, 197, 255, 0.75); }
+        .room-card.selected {
+            border-color: var(--accent);
+            background: rgba(0, 163, 255, 0.16) !important;
+        }
+
+        .room-index {
+            width: 40px;
+            color: var(--accent-2);
+            font-size: 12px;
+            text-align: center;
+            letter-spacing: 1px;
+        }
+
+        .room-data {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .room-name {
+            font-size: 12px;
+            color: #ffffff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .room-meta {
+            font-size: 10px;
+            color: var(--text-soft);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .room-right {
+            text-align: right;
+            min-width: 84px;
+        }
+
+        .room-players {
+            font-size: 12px;
+            color: var(--ok);
+        }
+
+        .room-state {
+            font-size: 10px;
+            letter-spacing: 1px;
+            color: var(--warn);
+        }
+
+        .room-state.private { color: var(--danger); }
+
+        .room-empty {
+            border: 1px dashed rgba(255, 255, 255, 0.12);
+            background: rgba(0, 0, 0, 0.22) !important;
+            color: rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .room-pager {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            justify-content: flex-start;
+            min-height: 28px;
+        }
+
+        .pager-btn,
+        .room-action,
+        .stage-action,
+        .modal-btn,
+        .chat-send {
+            border: 1px solid var(--line-soft);
+            background: rgba(16, 24, 34, 0.95) !important;
+            color: var(--text);
+            height: 28px;
+            padding: 0 12px;
+            font-size: 11px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            cursor: pointer;
+        }
+
+        .pager-btn.active {
+            border-color: var(--accent);
+            color: var(--accent-2);
+        }
+
+        .room-actions {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+            min-height: 32px;
+            align-items: center;
+        }
+
+        .room-action.primary,
+        .stage-action.primary,
+        .modal-btn.primary,
+        .chat-send {
+            border-color: rgba(0, 163, 255, 0.6);
+            color: #dff4ff;
+            background: rgba(0, 110, 174, 0.45) !important;
+        }
+
+        .room-action.warn,
+        .stage-action.warn,
+        .modal-btn.warn {
+            border-color: rgba(255, 88, 88, 0.55);
+            color: #ffd7d7;
+            background: rgba(122, 28, 28, 0.5) !important;
+        }
+
+        .room-action:disabled,
+        .stage-action:disabled,
+        .modal-btn:disabled,
+        .chat-send:disabled,
+        .refresh-btn:disabled {
+            color: rgba(255, 255, 255, 0.34);
+            border-color: rgba(255, 255, 255, 0.15);
+            background: rgba(25, 25, 25, 0.7) !important;
+            cursor: not-allowed;
+        }
+
+        .bottom-board {
+            height: 208px;
+            display: grid;
+            grid-template-columns: 220px 1fr 280px;
+            gap: 10px;
+        }
+
+        .subpanel {
+            border: 1px solid var(--line-soft);
+            background: rgba(8, 14, 22, 0.72) !important;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        .sub-title {
+            height: 28px;
+            border-bottom: 1px solid var(--line-soft);
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            font-size: 11px;
+            color: var(--accent-2);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .profile-body,
+        .info-body {
+            flex: 1;
+            padding: 10px;
+            font-size: 11px;
+            color: var(--text-soft);
+            overflow: hidden;
+        }
+
+        .profile-name {
+            color: #ffffff;
+            font-size: 14px;
+            margin-bottom: 6px;
+        }
+
+        .profile-line { margin: 3px 0; }
+
+        .profile-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-top: 10px;
+        }
+
+        .chat-body {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            padding: 8px;
+            gap: 8px;
+        }
+
+        .chat-log {
+            flex: 1;
+            min-height: 0;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(0, 0, 0, 0.32) !important;
+            padding: 8px;
+            overflow-y: auto;
+            font-size: 11px;
+            color: #dce7f5;
+            line-height: 1.35;
+            white-space: pre-wrap;
+        }
+
+        .chat-line.system { color: #8eb2d5; }
+        .chat-line.local { color: #9fe3ba; }
+        .chat-line.error { color: #ff9a9a; }
+
+        .chat-input-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        .chat-input {
+            flex: 1;
+            height: 28px;
+            border: 1px solid var(--line-soft);
+            background: rgba(0, 0, 0, 0.34) !important;
+            color: #ffffff;
+            padding: 0 8px;
+            font-family: inherit;
+            font-size: 11px;
+        }
+
+        .status-strip {
+            height: 26px;
+            border: 1px solid var(--line-soft);
+            background: rgba(5, 11, 18, 0.84) !important;
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            font-size: 11px;
+            color: #8db6dc;
+        }
+
+        .stage-view {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .stage-header {
+            height: 68px;
+            border: 1px solid var(--line);
+            background: var(--bg) !important;
+            padding: 10px 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .stage-title-wrap { min-width: 0; }
+
+        .stage-title {
+            font-size: 15px;
+            color: #ffffff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-bottom: 4px;
+        }
+
+        .stage-sub {
+            font-size: 11px;
+            color: var(--text-soft);
+        }
+
+        .stage-controls {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+        .stage-board {
+            flex: 1;
+            min-height: 0;
+            display: grid;
+            grid-template-columns: 1fr 340px;
+            gap: 10px;
+        }
+
+        .players-panel,
+        .stage-chat-panel {
+            border: 1px solid var(--line);
+            background: var(--bg) !important;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .players-head,
+        .stage-chat-head {
+            height: 30px;
+            border-bottom: 1px solid var(--line-soft);
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            font-size: 11px;
+            color: var(--accent-2);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            justify-content: space-between;
+        }
+
+        .players-list {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            font-size: 11px;
+        }
+
+        .player-row {
+            display: grid;
+            grid-template-columns: 1fr 70px 70px 90px;
+            gap: 8px;
+            padding: 7px 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            color: #dce7f5;
+        }
+
+        .player-row.head {
+            color: #9fb4c9;
+            background: rgba(0, 0, 0, 0.22) !important;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+            position: sticky;
+            top: 0;
+        }
+
+        .team-red { color: #ff9d9d; }
+        .team-blue { color: #8fc5ff; }
+        .ready-yes { color: #7af0b1; }
+        .ready-no { color: #f0bd77; }
+
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.32) !important;
+            z-index: 15;
+        }
+
+        .modal-backdrop.open { display: flex; }
+
+        .modal {
+            width: 420px;
+            border: 1px solid var(--line);
+            background: rgba(8, 12, 20, 0.97) !important;
+            padding: 14px;
+        }
+
+        .modal-title {
+            font-size: 13px;
+            color: #ffffff;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            margin-bottom: 8px;
+            font-size: 10px;
+            color: var(--text-soft);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .field input,
+        .field select {
+            height: 30px;
+            border: 1px solid var(--line-soft);
+            background: rgba(0, 0, 0, 0.36) !important;
+            color: #ffffff;
+            padding: 0 8px;
+            font-family: inherit;
+            font-size: 11px;
+        }
+
+        .field-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .modal-actions {
+            margin-top: 12px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+
+        @media (max-width: 1100px) {
+            .room-grid { grid-template-columns: 1fr; grid-template-rows: repeat(8, minmax(46px, 1fr)); }
+            .bottom-board { grid-template-columns: 1fr; grid-template-rows: 160px 220px 180px; height: auto; }
+            .stage-board { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="lobby-root">
+        <div class="top-strip">
+            <div class="logo">GUNZ LOBBY</div>
+            <div class="top-actions">
+                <button class="ghost-btn" disabled>SHOP</button>
+                <button class="ghost-btn" disabled>EQUIP</button>
+                <button class="ghost-btn" disabled>CHANNEL</button>
+                <button class="ghost-btn" disabled>OPTION</button>
+            </div>
+        </div>
+
+        <div class="channel-strip">
+            <div id="channel-title">CHANNEL: FREE / ALL MAPS</div>
+            <div style="display:flex; align-items:center; gap:8px;">
+                <div id="account-state">SESSION: -</div>
+                <button class="refresh-btn" id="btn-refresh-list" onclick="refreshStageList()">REFRESH</button>
+            </div>
+        </div>
+
+        <div class="main">
+            <div id="channel-view" class="channel-view">
+                <div class="panel room-board">
+                    <div id="stage-grid" class="room-grid"></div>
+                    <div class="room-pager" id="stage-pager"></div>
+                    <div class="room-actions">
+                        <button class="room-action primary" id="btn-stage-join" onclick="joinSelectedStage()" disabled>GAME JOIN</button>
+                        <button class="room-action" onclick="openCreateModal()">GAME CREATE</button>
+                        <button class="room-action" onclick="quickJoin()">QUICK JOIN</button>
+                    </div>
+                </div>
+
+                <div class="bottom-board">
+                    <div class="subpanel">
+                        <div class="sub-title">PLAYER INFO</div>
+                        <div class="profile-body" id="profile-body">
+                            <div class="profile-name">SEM PERSONAGEM</div>
+                            <div class="profile-line">Selecione um personagem antes de entrar no lobby.</div>
+                        </div>
+                    </div>
+
+                    <div class="subpanel">
+                        <div class="sub-title">CHANNEL CHAT</div>
+                        <div class="chat-body">
+                            <div id="channel-chat-log" class="chat-log"></div>
+                            <div class="chat-input-row">
+                                <input id="channel-chat-input" class="chat-input" maxlength="128" placeholder="Mensagem do canal (local por enquanto)" />
+                                <button class="chat-send" onclick="sendChannelChat()">SEND</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="subpanel">
+                        <div class="sub-title">STAGE DETAIL</div>
+                        <div class="info-body" id="stage-info-body">
+                            Selecione uma sala para ver detalhes e entrar.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="stage-view" class="stage-view hidden">
+                <div class="stage-header">
+                    <div class="stage-title-wrap">
+                        <div id="stage-room-title" class="stage-title">ROOM</div>
+                        <div id="stage-room-sub" class="stage-sub">-</div>
+                    </div>
+                    <div class="stage-controls">
+                        <button class="stage-action" id="btn-team-red" onclick="setMyTeam(1)">TEAM RED</button>
+                        <button class="stage-action" id="btn-team-blue" onclick="setMyTeam(2)">TEAM BLUE</button>
+                        <button class="stage-action primary" id="btn-ready" onclick="toggleReady()">READY</button>
+                        <button class="stage-action primary" id="btn-start" onclick="startStageMatch()">START</button>
+                        <button class="stage-action" id="btn-end" onclick="endStageMatch()">END</button>
+                        <button class="stage-action warn" onclick="leaveActiveStage()">STAGE EXIT</button>
+                    </div>
+                </div>
+
+                <div class="stage-board">
+                    <div class="players-panel">
+                        <div class="players-head">
+                            <span>STAGE PLAYERS</span>
+                            <button class="refresh-btn" onclick="requestActiveStageState()">SYNC</button>
+                        </div>
+                        <div class="players-list" id="stage-players-list"></div>
+                    </div>
+
+                    <div class="stage-chat-panel">
+                        <div class="stage-chat-head">STAGE CHAT</div>
+                        <div class="chat-body">
+                            <div id="stage-chat-log" class="chat-log"></div>
+                            <div class="chat-input-row">
+                                <input id="stage-chat-input" class="chat-input" maxlength="160" placeholder="Mensagem da sala" />
+                                <button class="chat-send" onclick="sendStageChat()">SEND</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="status" class="status-strip">Lobby pronto.</div>
+    </div>
+
+    <div id="create-modal" class="modal-backdrop" onclick="if(event.target===this) closeCreateModal()">
+        <div class="modal">
+            <div class="modal-title">Create Stage</div>
+            <div class="field">
+                <label for="create-name">Nome da sala</label>
+                <input id="create-name" maxlength="32" placeholder="Digite o nome" />
+            </div>
+            <div class="field-grid">
+                <div class="field">
+                    <label for="create-map">Mapa</label>
+                    <select id="create-map"></select>
+                </div>
+                <div class="field">
+                    <label for="create-mode">Modo</label>
+                    <select id="create-mode"></select>
+                </div>
+            </div>
+            <div class="field-grid">
+                <div class="field">
+                    <label for="create-max">Max players</label>
+                    <select id="create-max">
+                        <option value="2">2</option>
+                        <option value="4">4</option>
+                        <option value="8" selected>8</option>
+                        <option value="12">12</option>
+                        <option value="16">16</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="create-round">Round limit</label>
+                    <select id="create-round">
+                        <option value="0">No limit</option>
+                        <option value="5">5</option>
+                        <option value="10" selected>10</option>
+                        <option value="15">15</option>
+                        <option value="20">20</option>
+                    </select>
+                </div>
+            </div>
+            <div class="field-grid">
+                <div class="field">
+                    <label for="create-time">Time limit (min)</label>
+                    <select id="create-time">
+                        <option value="0">No limit</option>
+                        <option value="3">3</option>
+                        <option value="5" selected>5</option>
+                        <option value="10">10</option>
+                        <option value="15">15</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="create-password">Senha (opcional)</label>
+                    <input id="create-password" maxlength="24" placeholder="Privada se preencher" />
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="modal-btn" onclick="closeCreateModal()">Cancelar</button>
+                <button class="modal-btn primary" id="btn-create-stage" onclick="confirmCreateStage()">Criar e entrar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="password-modal" class="modal-backdrop" onclick="if(event.target===this) closePasswordModal()">
+        <div class="modal" style="width:340px;">
+            <div class="modal-title">Stage Privada</div>
+            <div class="field">
+                <label id="password-stage-name" for="join-password">Senha da sala</label>
+                <input id="join-password" maxlength="32" placeholder="Digite a senha" />
+            </div>
+            <div class="modal-actions">
+                <button class="modal-btn" onclick="closePasswordModal()">Cancelar</button>
+                <button class="modal-btn primary" onclick="confirmPrivateJoin()">Entrar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const PAGE_SIZE = 8;
+        const STAGE_REFRESH_MS = 5000;
+        const STAGE_STATE_POLL_MS = 1800;
+
+        const MAP_OPTIONS = [
+            { id: 0, name: 'Mansion' },
+            { id: 1, name: 'Prison' },
+            { id: 2, name: 'Prison II' },
+            { id: 3, name: 'Station' },
+            { id: 4, name: 'Battle Arena' },
+            { id: 5, name: 'Town' },
+            { id: 6, name: 'Dungeon' },
+            { id: 7, name: 'Dungeon II' },
+            { id: 8, name: 'Ruin' },
+            { id: 9, name: 'Island' },
+            { id: 10, name: 'Garden' },
+            { id: 11, name: 'Castle' },
+            { id: 12, name: 'Factory' },
+            { id: 13, name: 'Port' },
+            { id: 14, name: 'Lost Shrine' },
+            { id: 15, name: 'Stairway' },
+            { id: 16, name: 'Snow Town' },
+            { id: 17, name: 'Lodge' },
+            { id: 18, name: 'Dojo' },
+            { id: 19, name: 'Hall' },
+            { id: 20, name: 'Catacomb' }
+        ];
+
+        const GAME_MODE_OPTIONS = [
+            { id: 0, name: 'DM' },
+            { id: 1, name: 'TDM' },
+            { id: 2, name: 'GLADIATOR' },
+            { id: 3, name: 'TEAM GLADIATOR' },
+            { id: 4, name: 'ASSASSINATE' },
+            { id: 5, name: 'TRAINING' },
+            { id: 6, name: 'SURVIVAL' },
+            { id: 7, name: 'QUEST' },
+            { id: 8, name: 'BERSERKER' },
+            { id: 9, name: 'TEAM DEATHMATCH II' },
+            { id: 10, name: 'DUEL' }
+        ];
+
+        let stageList = [];
+        let currentPage = 0;
+        let selectedStageMatchId = '';
+        let selectedPrivateStage = null;
+
+        let activeStageMatchId = '';
+        let activeStageState = null;
+
+        let stageListTimer = null;
+        let stageStateTimer = null;
+
+        let sessionInfo = { userId: '', username: '' };
+        let profileInfo = null;
+
+        function setStatus(text, ok = true) {
+            const el = document.getElementById('status');
+            el.textContent = text;
+            el.style.color = ok ? '#8db6dc' : '#ff9f9f';
+        }
+
+        function safeParse(value, fallback = null) {
+            try {
+                if (typeof value === 'string') return JSON.parse(value);
+                if (value && typeof value === 'object') return value;
+                return fallback;
+            } catch (_) {
+                return fallback;
+            }
+        }
+
+        function appendLog(logId, text, cls = '') {
+            const log = document.getElementById(logId);
+            const line = document.createElement('div');
+            line.className = cls ? `chat-line ${cls}` : 'chat-line';
+            line.textContent = text;
+            log.appendChild(line);
+            log.scrollTop = log.scrollHeight;
+        }
+
+        function getModeName(modeId) {
+            const found = GAME_MODE_OPTIONS.find((m) => m.id === Number(modeId));
+            return found ? found.name : `MODE ${modeId}`;
+        }
+
+        function getMapName(mapId) {
+            const found = MAP_OPTIONS.find((m) => m.id === Number(mapId));
+            return found ? found.name : `MAP ${mapId}`;
+        }
+
+        function getSelectedStage() {
+            return stageList.find((s) => s.matchId === selectedStageMatchId) || null;
+        }
+
+        function normalizeStage(entry) {
+            const label = entry && entry.label ? entry.label : {};
+            const maxPlayers = Number.isFinite(Number(label.maxPlayers)) ? Number(label.maxPlayers) : 0;
+            const currentPlayers = Number.isFinite(Number(entry.size)) ? Number(entry.size) : 0;
+            return {
+                matchId: entry.matchId || '',
+                size: currentPlayers,
+                name: String(label.name || 'Room'),
+                mapId: Number.isFinite(Number(label.mapId)) ? Number(label.mapId) : 0,
+                mode: String(label.mode || getModeName(label.gameTypeId || 0)),
+                gameTypeId: Number.isFinite(Number(label.gameTypeId)) ? Number(label.gameTypeId) : 0,
+                maxPlayers,
+                hasPassword: !!label.hasPassword,
+                started: !!label.started
+            };
+        }
+
+        function fillCreateOptions() {
+            const mapSel = document.getElementById('create-map');
+            const modeSel = document.getElementById('create-mode');
+            mapSel.innerHTML = '';
+            modeSel.innerHTML = '';
+
+            MAP_OPTIONS.forEach((m) => {
+                const opt = document.createElement('option');
+                opt.value = String(m.id);
+                opt.textContent = `${m.id} - ${m.name}`;
+                mapSel.appendChild(opt);
+            });
+
+            GAME_MODE_OPTIONS.forEach((m) => {
+                const opt = document.createElement('option');
+                opt.value = String(m.id);
+                opt.textContent = `${m.id} - ${m.name}`;
+                modeSel.appendChild(opt);
+            });
+
+            mapSel.value = '0';
+            modeSel.value = '0';
+        }
+
+        function updateJoinButton() {
+            const btn = document.getElementById('btn-stage-join');
+            btn.disabled = !selectedStageMatchId;
+        }
+
+        function renderStageInfoPanel() {
+            const panel = document.getElementById('stage-info-body');
+            const selected = getSelectedStage();
+            if (!selected) {
+                panel.textContent = 'Selecione uma sala para ver detalhes e entrar.';
+                return;
+            }
+
+            panel.innerHTML = '';
+            const lines = [
+                `Nome: ${selected.name}`,
+                `Mapa: ${getMapName(selected.mapId)} (${selected.mapId})`,
+                `Modo: ${selected.mode}`,
+                `Players: ${selected.size}/${selected.maxPlayers || '?'}`,
+                `MatchId: ${selected.matchId}`,
+                selected.hasPassword ? 'Sala privada: SIM' : 'Sala privada: NAO'
+            ];
+
+            lines.forEach((line) => {
+                const div = document.createElement('div');
+                div.className = 'profile-line';
+                div.textContent = line;
+                panel.appendChild(div);
+            });
+        }
+
+        function renderStageGrid() {
+            const grid = document.getElementById('stage-grid');
+            grid.innerHTML = '';
+
+            const start = currentPage * PAGE_SIZE;
+            const pageData = stageList.slice(start, start + PAGE_SIZE);
+
+            for (let i = 0; i < PAGE_SIZE; i += 1) {
+                const entry = pageData[i];
+                if (!entry) {
+                    const empty = document.createElement('div');
+                    empty.className = 'room-empty';
+                    empty.textContent = 'Empty Slot';
+                    grid.appendChild(empty);
+                    continue;
+                }
+
+                const card = document.createElement('div');
+                card.className = `room-card${entry.matchId === selectedStageMatchId ? ' selected' : ''}`;
+                card.onclick = () => {
+                    selectedStageMatchId = entry.matchId;
+                    renderStageGrid();
+                    renderStageInfoPanel();
+                    updateJoinButton();
+                };
+                card.ondblclick = () => {
+                    selectedStageMatchId = entry.matchId;
+                    renderStageGrid();
+                    renderStageInfoPanel();
+                    updateJoinButton();
+                    joinSelectedStage();
+                };
+
+                const index = document.createElement('div');
+                index.className = 'room-index';
+                index.textContent = String(start + i + 1).padStart(3, '0');
+
+                const data = document.createElement('div');
+                data.className = 'room-data';
+                const name = document.createElement('div');
+                name.className = 'room-name';
+                name.textContent = entry.name;
+                const meta = document.createElement('div');
+                meta.className = 'room-meta';
+                meta.textContent = `${getMapName(entry.mapId)} / ${entry.mode}`;
+                data.appendChild(name);
+                data.appendChild(meta);
+
+                const right = document.createElement('div');
+                right.className = 'room-right';
+                const players = document.createElement('div');
+                players.className = 'room-players';
+                players.textContent = `${entry.size}/${entry.maxPlayers || '?'}`;
+                const state = document.createElement('div');
+                state.className = `room-state${entry.hasPassword ? ' private' : ''}`;
+                if (entry.hasPassword) state.textContent = 'PRIVATE';
+                else if (entry.started) state.textContent = 'PLAYING';
+                else state.textContent = 'WAITING';
+                right.appendChild(players);
+                right.appendChild(state);
+
+                card.appendChild(index);
+                card.appendChild(data);
+                card.appendChild(right);
+                grid.appendChild(card);
+            }
+
+            renderPager();
+        }
+
+        function renderPager() {
+            const pager = document.getElementById('stage-pager');
+            pager.innerHTML = '';
+            const pageCount = Math.max(1, Math.ceil(stageList.length / PAGE_SIZE));
+            if (currentPage >= pageCount) currentPage = pageCount - 1;
+
+            const prev = document.createElement('button');
+            prev.className = 'pager-btn';
+            prev.textContent = '<';
+            prev.disabled = currentPage <= 0;
+            prev.onclick = () => {
+                if (currentPage > 0) {
+                    currentPage -= 1;
+                    renderStageGrid();
+                }
+            };
+            pager.appendChild(prev);
+
+            for (let i = 0; i < pageCount; i += 1) {
+                const btn = document.createElement('button');
+                btn.className = `pager-btn${i === currentPage ? ' active' : ''}`;
+                btn.textContent = String(i + 1);
+                btn.onclick = () => {
+                    currentPage = i;
+                    renderStageGrid();
+                };
+                pager.appendChild(btn);
+            }
+
+            const next = document.createElement('button');
+            next.className = 'pager-btn';
+            next.textContent = '>';
+            next.disabled = currentPage >= pageCount - 1;
+            next.onclick = () => {
+                if (currentPage < pageCount - 1) {
+                    currentPage += 1;
+                    renderStageGrid();
+                }
+            };
+            pager.appendChild(next);
+        }
+
+        function refreshStageList() {
+            if (!window.list_stages) {
+                setStatus('Bridge list_stages indisponivel.', false);
+                return;
+            }
+            const payload = {
+                offset: 0,
+                limit: 100,
+                sort: 'size_desc'
+            };
+            list_stages(JSON.stringify(payload));
+        }
+
+        function onStageList(data) {
+            const list = (data && Array.isArray(data.stages)) ? data.stages : [];
+            const normalized = list.map(normalizeStage).filter((x) => x.matchId);
+            stageList = normalized;
+
+            if (selectedStageMatchId && !stageList.some((s) => s.matchId === selectedStageMatchId)) {
+                selectedStageMatchId = '';
+            }
+
+            renderStageGrid();
+            renderStageInfoPanel();
+            updateJoinButton();
+            setStatus(`Lista atualizada: ${stageList.length} salas.`);
+        }
+
+        function openCreateModal() {
+            document.getElementById('create-modal').classList.add('open');
+            document.getElementById('create-name').value = '';
+            document.getElementById('create-password').value = '';
+            document.getElementById('create-name').focus();
+        }
+
+        function closeCreateModal() {
+            document.getElementById('create-modal').classList.remove('open');
+            document.getElementById('btn-create-stage').disabled = false;
+        }
+
+        function confirmCreateStage() {
+            if (!window.create_stage) {
+                setStatus('Bridge create_stage indisponivel.', false);
+                return;
+            }
+
+            const name = (document.getElementById('create-name').value || '').trim();
+            if (!name) {
+                setStatus('Informe um nome para a sala.', false);
+                return;
+            }
+
+            const payload = {
+                name,
+                mapId: parseInt(document.getElementById('create-map').value || '0', 10),
+                gameTypeId: parseInt(document.getElementById('create-mode').value || '0', 10),
+                maxPlayers: parseInt(document.getElementById('create-max').value || '8', 10),
+                round: parseInt(document.getElementById('create-round').value || '10', 10),
+                limitTime: parseInt(document.getElementById('create-time').value || '5', 10),
+                password: (document.getElementById('create-password').value || '').trim(),
+                channelRule: 'free_all_maps'
+            };
+
+            document.getElementById('btn-create-stage').disabled = true;
+            setStatus('Criando sala...');
+            create_stage(JSON.stringify(payload));
+        }
+
+        function onCreateStageResult(result) {
+            document.getElementById('btn-create-stage').disabled = false;
+            if (!result || !result.success) {
+                const msg = result && result.message ? result.message : 'erro desconhecido';
+                setStatus(`Falha ao criar sala: ${msg}`, false);
+                return;
+            }
+
+            closeCreateModal();
+            const data = result.data || {};
+            const matchId = data.matchId || '';
+            if (!matchId) {
+                setStatus('Sala criada, mas sem matchId retornado.', false);
+                refreshStageList();
+                return;
+            }
+
+            selectedStageMatchId = matchId;
+            setStatus('Sala criada. Entrando na sala...');
+            join_stage(matchId, (document.getElementById('create-password').value || '').trim());
+            refreshStageList();
+        }
+
+        function openPasswordModal(stage) {
+            selectedPrivateStage = stage;
+            document.getElementById('join-password').value = '';
+            document.getElementById('password-stage-name').textContent = `Senha da sala: ${stage.name}`;
+            document.getElementById('password-modal').classList.add('open');
+            document.getElementById('join-password').focus();
+        }
+
+        function closePasswordModal() {
+            document.getElementById('password-modal').classList.remove('open');
+            selectedPrivateStage = null;
+        }
+
+        function confirmPrivateJoin() {
+            if (!selectedPrivateStage) return;
+            const password = document.getElementById('join-password').value || '';
+            closePasswordModal();
+            setStatus('Entrando na sala privada...');
+            join_stage(selectedPrivateStage.matchId, password);
+        }
+
+        function joinSelectedStage() {
+            const selected = getSelectedStage();
+            if (!selected) {
+                setStatus('Selecione uma sala primeiro.', false);
+                return;
+            }
+
+            if (!window.join_stage) {
+                setStatus('Bridge join_stage indisponivel.', false);
+                return;
+            }
+
+            if (selected.hasPassword) {
+                openPasswordModal(selected);
+                return;
+            }
+
+            setStatus('Entrando na sala...');
+            join_stage(selected.matchId, '');
+        }
+
+        function quickJoin() {
+            const open = stageList.find((s) => !s.hasPassword && (!s.maxPlayers || s.size < s.maxPlayers));
+            if (!open) {
+                setStatus('Nenhuma sala disponivel para quick join.', false);
+                return;
+            }
+            selectedStageMatchId = open.matchId;
+            renderStageGrid();
+            renderStageInfoPanel();
+            updateJoinButton();
+            setStatus(`Quick join em ${open.name}...`);
+            join_stage(open.matchId, '');
+        }
+
+        function onJoinStageResult(result) {
+            if (!result || !result.success) {
+                const msg = result && result.message ? result.message : 'erro desconhecido';
+                setStatus(`Falha ao entrar na sala: ${msg}`, false);
+                return;
+            }
+
+            const data = result.data || {};
+            activeStageMatchId = data.matchId || '';
+            if (!activeStageMatchId) {
+                setStatus('Join sem matchId retornado.', false);
+                return;
+            }
+
+            stageChatReset();
+            switchToStageView();
+            requestActiveStageState();
+            setStatus('Dentro da sala.');
+        }
+
+        function onLeaveStageResult(result) {
+            if (!result || !result.success) {
+                const msg = result && result.message ? result.message : 'erro desconhecido';
+                setStatus(`Falha ao sair da sala: ${msg}`, false);
+                return;
+            }
+            exitStageView();
+            setStatus('Saiu da sala.');
+        }
+
+        function switchToStageView() {
+            document.getElementById('channel-view').classList.add('hidden');
+            document.getElementById('stage-view').classList.remove('hidden');
+            stopStageListTimer();
+            startStageStateTimer();
+        }
+
+        function exitStageView() {
+            activeStageMatchId = '';
+            activeStageState = null;
+            document.getElementById('stage-view').classList.add('hidden');
+            document.getElementById('channel-view').classList.remove('hidden');
+            stopStageStateTimer();
+            startStageListTimer();
+            refreshStageList();
+        }
+
+        function leaveActiveStage() {
+            if (!window.leave_stage) {
+                exitStageView();
+                return;
+            }
+            leave_stage();
+        }
+
+        function startStageListTimer() {
+            stopStageListTimer();
+            stageListTimer = setInterval(() => {
+                if (!activeStageMatchId) refreshStageList();
+            }, STAGE_REFRESH_MS);
+        }
+
+        function stopStageListTimer() {
+            if (stageListTimer) {
+                clearInterval(stageListTimer);
+                stageListTimer = null;
+            }
+        }
+
+        function startStageStateTimer() {
+            stopStageStateTimer();
+            stageStateTimer = setInterval(() => {
+                requestActiveStageState();
+            }, STAGE_STATE_POLL_MS);
+        }
+
+        function stopStageStateTimer() {
+            if (stageStateTimer) {
+                clearInterval(stageStateTimer);
+                stageStateTimer = null;
+            }
+        }
+
+        function requestActiveStageState() {
+            if (!activeStageMatchId || !window.request_stage_state) return;
+            request_stage_state(activeStageMatchId);
+        }
+
+        function onStageState(state) {
+            activeStageState = state || null;
+            renderStageState();
+        }
+
+        function formatTeam(team) {
+            if (Number(team) === 1) return 'RED';
+            if (Number(team) === 2) return 'BLUE';
+            return 'NONE';
+        }
+
+        function getMyPlayerState() {
+            if (!activeStageState || !activeStageState.players) return null;
+            const players = Object.values(activeStageState.players);
+            return players.find((p) => p && p.userId === sessionInfo.userId) || null;
+        }
+
+        function renderStageState() {
+            const title = document.getElementById('stage-room-title');
+            const sub = document.getElementById('stage-room-sub');
+            const list = document.getElementById('stage-players-list');
+
+            if (!activeStageState || !activeStageState.stage) {
+                title.textContent = 'ROOM';
+                sub.textContent = `matchId: ${activeStageMatchId || '-'}`;
+                list.innerHTML = '';
+                return;
+            }
+
+            const stage = activeStageState.stage;
+            title.textContent = stage.name || 'Room';
+            sub.textContent = `${getMapName(stage.mapId)} / ${stage.mode || 'MODE'} / ${activeStageMatchId}`;
+
+            const players = Object.values(activeStageState.players || {});
+            list.innerHTML = '';
+
+            const head = document.createElement('div');
+            head.className = 'player-row head';
+            head.innerHTML = '<div>PLAYER</div><div>TEAM</div><div>READY</div><div>STATE</div>';
+            list.appendChild(head);
+
+            players.forEach((p) => {
+                const row = document.createElement('div');
+                row.className = 'player-row';
+
+                const name = p && p.presence && p.presence.username ? p.presence.username : (p.userId || 'unknown');
+                const isMaster = p && p.userId === stage.masterUserId;
+                const team = formatTeam(p ? p.team : 0);
+                const ready = p && p.ready ? 'READY' : 'WAIT';
+                const status = p && p.dead ? 'DEAD' : (p && p.spectator ? 'SPEC' : 'LIVE');
+
+                const teamClass = team === 'RED' ? 'team-red' : (team === 'BLUE' ? 'team-blue' : '');
+                const readyClass = ready === 'READY' ? 'ready-yes' : 'ready-no';
+
+                row.innerHTML = `<div>${name}${isMaster ? ' [MASTER]' : ''}</div><div class="${teamClass}">${team}</div><div class="${readyClass}">${ready}</div><div>${status}</div>`;
+                list.appendChild(row);
+            });
+
+            if (players.length === 0) {
+                const row = document.createElement('div');
+                row.className = 'player-row';
+                row.innerHTML = '<div>Nenhum jogador</div><div>-</div><div>-</div><div>-</div>';
+                list.appendChild(row);
+            }
+
+            const me = getMyPlayerState();
+            const isMaster = !!(stage.masterUserId && stage.masterUserId === sessionInfo.userId);
+            const btnReady = document.getElementById('btn-ready');
+            btnReady.textContent = me && me.ready ? 'UNREADY' : 'READY';
+
+            document.getElementById('btn-start').disabled = !isMaster;
+            document.getElementById('btn-end').disabled = !isMaster;
+        }
+
+        function toggleReady() {
+            const me = getMyPlayerState();
+            const target = !(me && me.ready);
+            if (!window.set_stage_ready) return;
+            set_stage_ready(activeStageMatchId, target);
+        }
+
+        function setMyTeam(team) {
+            if (!window.set_stage_team) return;
+            set_stage_team(activeStageMatchId, team);
+        }
+
+        function onStageReadyResult(result) {
+            if (!result || !result.success) {
+                const msg = result && result.message ? result.message : 'falha';
+                setStatus(`Ready falhou: ${msg}`, false);
+                return;
+            }
+            requestActiveStageState();
+        }
+
+        function onStageTeamResult(result) {
+            if (!result || !result.success) {
+                const msg = result && result.message ? result.message : 'falha';
+                setStatus(`Troca de time falhou: ${msg}`, false);
+                return;
+            }
+            requestActiveStageState();
+        }
+
+        function startStageMatch() {
+            if (!window.stage_start) return;
+            stage_start(activeStageMatchId);
+        }
+
+        function endStageMatch() {
+            if (!window.stage_end) return;
+            stage_end(activeStageMatchId);
+        }
+
+        function onStageStartResult(result) {
+            if (!result || !result.success) {
+                const msg = result && result.message ? result.message : 'falha';
+                appendLog('stage-chat-log', `[SYSTEM] Start falhou: ${msg}`, 'error');
+                return;
+            }
+            appendLog('stage-chat-log', '[SYSTEM] Partida iniciada.', 'system');
+            requestActiveStageState();
+        }
+
+        function onStageEndResult(result) {
+            if (!result || !result.success) {
+                const msg = result && result.message ? result.message : 'falha';
+                appendLog('stage-chat-log', `[SYSTEM] End falhou: ${msg}`, 'error');
+                return;
+            }
+            appendLog('stage-chat-log', '[SYSTEM] Partida finalizada.', 'system');
+            requestActiveStageState();
+        }
+
+        function sendStageChat() {
+            const input = document.getElementById('stage-chat-input');
+            const message = (input.value || '').trim();
+            if (!message) return;
+            if (!window.stage_chat) {
+                appendLog('stage-chat-log', '[SYSTEM] Bridge stage_chat indisponivel.', 'error');
+                return;
+            }
+            stage_chat(activeStageMatchId, message);
+            input.value = '';
+        }
+
+        function stageChatReset() {
+            const log = document.getElementById('stage-chat-log');
+            log.innerHTML = '';
+            appendLog('stage-chat-log', '[SYSTEM] Stage conectado.', 'system');
+        }
+
+        function sendChannelChat() {
+            const input = document.getElementById('channel-chat-input');
+            const text = (input.value || '').trim();
+            if (!text) return;
+            const who = sessionInfo.username || 'YOU';
+            appendLog('channel-chat-log', `[${who}] ${text}`, 'local');
+            input.value = '';
+        }
+
+        function onLobbyError(info) {
+            const scope = info && info.scope ? info.scope : 'lobby';
+            const message = info && info.message ? info.message : 'erro desconhecido';
+            setStatus(`[${scope}] ${message}`, false);
+        }
+
+        function onSessionInfo(info) {
+            if (!info) return;
+            sessionInfo = {
+                userId: info.userId || '',
+                username: info.username || ''
+            };
+            const state = document.getElementById('account-state');
+            state.textContent = `SESSION: ${sessionInfo.username || '-'} / ${sessionInfo.userId ? 'OK' : 'NO'}`;
+        }
+
+        function onCharacterList(data) {
+            if (!data) return;
+            const chars = Array.isArray(data.characters) ? data.characters : [];
+            const activeId = data.activeCharId || '';
+            profileInfo = chars.find((c) => c.id === activeId) || chars[0] || null;
+            renderProfile();
+        }
+
+        function renderProfile() {
+            const body = document.getElementById('profile-body');
+            if (!profileInfo) {
+                body.innerHTML = '<div class="profile-name">SEM PERSONAGEM</div><div class="profile-line">Volte para selecionar um personagem.</div>';
+                return;
+            }
+
+            const name = profileInfo.name || 'Unknown';
+            const level = Number.isFinite(Number(profileInfo.level)) ? Number(profileInfo.level) : 1;
+            const bounty = Number.isFinite(Number(profileInfo.bounty)) ? Number(profileInfo.bounty) : 0;
+            const hp = Number.isFinite(Number(profileInfo.hp)) ? Number(profileInfo.hp) : 100;
+            const ap = Number.isFinite(Number(profileInfo.ap)) ? Number(profileInfo.ap) : 0;
+
+            body.innerHTML = '';
+
+            const title = document.createElement('div');
+            title.className = 'profile-name';
+            title.textContent = name.toUpperCase();
+            body.appendChild(title);
+
+            const lines = [
+                `Level: ${level}`,
+                `Bounty: ${bounty}`,
+                `HP: ${hp}`,
+                `AP: ${ap}`
+            ];
+            lines.forEach((line) => {
+                const div = document.createElement('div');
+                div.className = 'profile-line';
+                div.textContent = line;
+                body.appendChild(div);
+            });
+
+            const actions = document.createElement('div');
+            actions.className = 'profile-actions';
+
+            const backChar = document.createElement('button');
+            backChar.className = 'room-action';
+            backChar.textContent = 'CHAR SELECT';
+            backChar.onclick = () => {
+                if (window.go_character_select) go_character_select();
+                else window.location.href = 'character_selection.html';
+            };
+
+            const logout = document.createElement('button');
+            logout.className = 'room-action warn';
+            logout.textContent = 'LOGOUT';
+            logout.onclick = () => {
+                if (activeStageMatchId && window.leave_stage) {
+                    leave_stage();
+                }
+                window.location.href = 'login.html';
+            };
+
+            actions.appendChild(backChar);
+            actions.appendChild(logout);
+            body.appendChild(actions);
+        }
+
+        function onStageRtMessage(message) {
+            if (!message) return;
+            const opCode = Number(message.opCode || 0);
+            const parsedData = safeParse(message.data, null);
+            const payload = parsedData && typeof parsedData === 'object' && parsedData.payload !== undefined
+                ? parsedData.payload
+                : parsedData;
+
+            if (opCode === 4107 && payload) {
+                const name = payload.username || payload.userId || 'SYSTEM';
+                const text = payload.message || '';
+                appendLog('stage-chat-log', `[${name}] ${text}`, name === 'SERVER' ? 'system' : '');
+                return;
+            }
+
+            if (opCode === 4004 || opCode === 4003) {
+                requestActiveStageState();
+                return;
+            }
+
+            if (opCode === 1003) {
+                appendLog('stage-chat-log', '[SYSTEM] Match start signal.', 'system');
+                requestActiveStageState();
+                return;
+            }
+
+            if (opCode === 1004) {
+                appendLog('stage-chat-log', '[SYSTEM] Match end signal.', 'system');
+                requestActiveStageState();
+            }
+        }
+
+        window.onload = () => {
+            fillCreateOptions();
+            appendLog('channel-chat-log', '[SYSTEM] Lobby carregado.', 'system');
+
+            if (window.list_characters) list_characters();
+            refreshStageList();
+            startStageListTimer();
+
+            document.getElementById('channel-chat-input').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') sendChannelChat();
+            });
+            document.getElementById('stage-chat-input').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') sendStageChat();
+            });
+            document.getElementById('join-password').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') confirmPrivateJoin();
+            });
+            document.getElementById('create-name').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') confirmCreateStage();
+            });
+        };
+
+        window.onStageList = onStageList;
+        window.onCreateStageResult = onCreateStageResult;
+        window.onJoinStageResult = onJoinStageResult;
+        window.onLeaveStageResult = onLeaveStageResult;
+        window.onStageState = onStageState;
+        window.onStageReadyResult = onStageReadyResult;
+        window.onStageTeamResult = onStageTeamResult;
+        window.onStageStartResult = onStageStartResult;
+        window.onStageEndResult = onStageEndResult;
+        window.onLobbyError = onLobbyError;
+        window.onStageRtMessage = onStageRtMessage;
+        window.onSessionInfo = onSessionInfo;
+        window.onCharacterList = onCharacterList;
+    </script>
+</body>
+</html>
