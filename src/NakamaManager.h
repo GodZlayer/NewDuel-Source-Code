@@ -28,6 +28,8 @@ namespace Nakama {
 
         void listStages(const std::string& filterJson, std::function<void(bool, const std::string&)> callback);
         void createStage(const std::string& createJson, std::function<void(bool, const std::string&)> callback);
+        void getBootstrapV2(std::function<void(bool, const std::string&)> callback);
+        void getGameData(const std::string& key, std::function<void(bool, const std::string&)> callback);
         void joinStage(const std::string& matchId, const std::string& password, std::function<void(bool, const std::string&)> callback);
         void leaveStage(std::function<void(bool, const std::string&)> callback);
         void requestStageState(const std::string& matchId, std::function<void(bool, const std::string&)> callback);
@@ -44,6 +46,7 @@ namespace Nakama {
         
         void joinMatch(std::function<void(bool, const std::string&)> callback);
         void sendMatchData(int64_t opCode, const std::string& data);
+        void sendClientReady(const std::string& recipeHash, const std::string& contentHash);
 
         NRtClientPtr getRtClient() { return _rtClient; }
         NClientPtr getClient() { return _client; }

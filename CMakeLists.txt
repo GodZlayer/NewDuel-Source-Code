@@ -34,7 +34,7 @@ link_directories("${ULTRALIGHT_ROOT}/lib")
 include_directories("src")
 include_directories("src/RealSpace3/Include")
 
-file(GLOB_RECURSE SOURCES 
+file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
     "src/*.cpp" 
     "src/*.h"
     "src/RealSpace3/Source/*.cpp"

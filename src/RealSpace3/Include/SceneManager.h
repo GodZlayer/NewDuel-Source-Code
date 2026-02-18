@@ -18,7 +18,7 @@ public:
     void loadLobbyBasic();
     void update(float deltaTime);
     void draw(ID3D11DeviceContext* context);
-    void setCreationPreview(int sex, int face, int preset, int hair);
+    bool setCreationPreview(int sex, int face, int preset, int hair);
     void setCreationPreviewVisible(bool visible);
     void setSize(int w, int h);
 

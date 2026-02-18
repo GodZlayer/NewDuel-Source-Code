@@ -623,6 +623,7 @@
                     <div class="stage-title-wrap">
                         <div id="stage-room-title" class="stage-title">ROOM</div>
                         <div id="stage-room-sub" class="stage-sub">-</div>
+                        <div id="stage-tech-sub" class="stage-sub" style="font-size:10px; color:#7da6c7;">seed: - / recipe: - / content: -</div>
                     </div>
                     <div class="stage-controls">
                         <button class="stage-action" id="btn-team-red" onclick="setMyTeam(1)">TEAM RED</button>
@@ -715,6 +716,10 @@
                     <input id="create-password" maxlength="24" placeholder="Privada se preencher" />
                 </div>
             </div>
+            <div class="field">
+                <label for="create-mode-profile">Mode profile</label>
+                <select id="create-mode-profile"></select>
+            </div>
             <div class="modal-actions">
                 <button class="modal-btn" onclick="closeCreateModal()">Cancelar</button>
                 <button class="modal-btn primary" id="btn-create-stage" onclick="confirmCreateStage()">Criar e entrar</button>
@@ -740,44 +745,27 @@
         const PAGE_SIZE = 8;
         const STAGE_REFRESH_MS = 5000;
         const STAGE_STATE_POLL_MS = 1800;
+        const MODE_NAME_BY_ID = {
+            0: 'DM',
+            1: 'TDM',
+            2: 'GLADIATOR',
+            3: 'TEAM GLADIATOR',
+            4: 'ASSASSINATE',
+            5: 'TRAINING',
+            6: 'SURVIVAL',
+            7: 'QUEST',
+            8: 'BERSERKER',
+            9: 'TEAM DEATHMATCH II',
+            10: 'DUEL'
+        };
 
-        const MAP_OPTIONS = [
-            { id: 0, name: 'Mansion' },
-            { id: 1, name: 'Prison' },
-            { id: 2, name: 'Prison II' },
-            { id: 3, name: 'Station' },
-            { id: 4, name: 'Battle Arena' },
-            { id: 5, name: 'Town' },
-            { id: 6, name: 'Dungeon' },
-            { id: 7, name: 'Dungeon II' },
-            { id: 8, name: 'Ruin' },
-            { id: 9, name: 'Island' },
-            { id: 10, name: 'Garden' },
-            { id: 11, name: 'Castle' },
-            { id: 12, name: 'Factory' },
-            { id: 13, name: 'Port' },
-            { id: 14, name: 'Lost Shrine' },
-            { id: 15, name: 'Stairway' },
-            { id: 16, name: 'Snow Town' },
-            { id: 17, name: 'Lodge' },
-            { id: 18, name: 'Dojo' },
-            { id: 19, name: 'Hall' },
-            { id: 20, name: 'Catacomb' }
-        ];
-
-        const GAME_MODE_OPTIONS = [
-            { id: 0, name: 'DM' },
-            { id: 1, name: 'TDM' },
-            { id: 2, name: 'GLADIATOR' },
-            { id: 3, name: 'TEAM GLADIATOR' },
-            { id: 4, name: 'ASSASSINATE' },
-            { id: 5, name: 'TRAINING' },
-            { id: 6, name: 'SURVIVAL' },
-            { id: 7, name: 'QUEST' },
-            { id: 8, name: 'BERSERKER' },
-            { id: 9, name: 'TEAM DEATHMATCH II' },
-            { id: 10, name: 'DUEL' }
-        ];
+        let MAP_OPTIONS = [];
+        let GAME_MODE_OPTIONS = [];
+        let MODE_PROFILE_OPTIONS = ['classic'];
+        let bootstrapV2 = null;
+        let bootstrapLoaded = false;
+        let stageIntegrityError = '';
+        let clientReadySentForStage = '';
 
         let stageList = [];
         let currentPage = 0;
@@ -809,6 +797,46 @@
             }
         }
 
+        function normalizeBootstrapMaps(data) {
+            const maps = Array.isArray(data && data.maps) ? data.maps : [];
+            return maps
+                .filter((m) => m && Number.isFinite(Number(m.id)) && m.available !== false)
+                .map((m) => ({
+                    id: Number(m.id),
+                    name: String(m.name || `MAP ${m.id}`)
+                }))
+                .sort((a, b) => a.id - b.id);
+        }
+
+        function normalizeBootstrapModes(data) {
+            const gameTypes = Array.isArray(data && data.gameTypes) ? data.gameTypes : [];
+            return gameTypes
+                .filter((g) => g && Number.isFinite(Number(g.id)))
+                .map((g) => {
+                    const id = Number(g.id);
+                    const name = (typeof g.name === 'string' && g.name.trim()) ? g.name.trim() : (MODE_NAME_BY_ID[id] || `MODE ${id}`);
+                    return { id, name };
+                })
+                .sort((a, b) => a.id - b.id);
+        }
+
+        function normalizeModeProfiles(data) {
+            const profiles = data && data.serverProfile && Array.isArray(data.serverProfile.modeProfiles)
+                ? data.serverProfile.modeProfiles
+                : null;
+            if (!profiles || profiles.length === 0) return ['classic'];
+            const out = profiles.map((p) => String(p || '').trim()).filter((p) => p);
+            return out.length ? out : ['classic'];
+        }
+
+        function applyBootstrapData(data) {
+            MAP_OPTIONS = normalizeBootstrapMaps(data);
+            GAME_MODE_OPTIONS = normalizeBootstrapModes(data);
+            MODE_PROFILE_OPTIONS = normalizeModeProfiles(data);
+            bootstrapLoaded = true;
+            fillCreateOptions();
+        }
+
         function appendLog(logId, text, cls = '') {
             const log = document.getElementById(logId);
             const line = document.createElement('div');
@@ -820,7 +848,9 @@
 
         function getModeName(modeId) {
             const found = GAME_MODE_OPTIONS.find((m) => m.id === Number(modeId));
-            return found ? found.name : `MODE ${modeId}`;
+            if (found) return found.name;
+            const fallback = MODE_NAME_BY_ID[Number(modeId)];
+            return fallback || `MODE ${modeId}`;
         }
 
         function getMapName(mapId) {
@@ -836,41 +866,62 @@
             const label = entry && entry.label ? entry.label : {};
             const maxPlayers = Number.isFinite(Number(label.maxPlayers)) ? Number(label.maxPlayers) : 0;
             const currentPlayers = Number.isFinite(Number(entry.size)) ? Number(entry.size) : 0;
+            const mapId = Number.isFinite(Number(label.mapId)) ? Number(label.mapId) : 0;
+            const gameTypeId = Number.isFinite(Number(label.gameTypeId)) ? Number(label.gameTypeId) : 0;
             return {
                 matchId: entry.matchId || '',
                 size: currentPlayers,
                 name: String(label.name || 'Room'),
-                mapId: Number.isFinite(Number(label.mapId)) ? Number(label.mapId) : 0,
-                mode: String(label.mode || getModeName(label.gameTypeId || 0)),
-                gameTypeId: Number.isFinite(Number(label.gameTypeId)) ? Number(label.gameTypeId) : 0,
+                mapId,
+                mode: String(label.mode || getModeName(gameTypeId)),
+                modeProfile: String(label.modeProfile || 'classic'),
+                gameTypeId,
                 maxPlayers,
                 hasPassword: !!label.hasPassword,
-                started: !!label.started
+                started: !!label.started,
+                seed: Number.isFinite(Number(label.seed)) ? Number(label.seed) : null,
+                recipeHash: String(label.recipeHash || ''),
+                contentVersion: String(label.contentVersion || ''),
+                contentHash: String(label.contentHash || '')
             };
         }
 
         function fillCreateOptions() {
             const mapSel = document.getElementById('create-map');
             const modeSel = document.getElementById('create-mode');
+            const modeProfileSel = document.getElementById('create-mode-profile');
             mapSel.innerHTML = '';
             modeSel.innerHTML = '';
+            modeProfileSel.innerHTML = '';
 
-            MAP_OPTIONS.forEach((m) => {
+            const mapOptions = MAP_OPTIONS.length > 0 ? MAP_OPTIONS : [{ id: 0, name: 'MAP 0' }];
+            const modeOptions = GAME_MODE_OPTIONS.length > 0 ? GAME_MODE_OPTIONS : [{ id: 0, name: getModeName(0) }];
+            const modeProfiles = MODE_PROFILE_OPTIONS.length > 0 ? MODE_PROFILE_OPTIONS : ['classic'];
+
+            mapOptions.forEach((m) => {
                 const opt = document.createElement('option');
                 opt.value = String(m.id);
                 opt.textContent = `${m.id} - ${m.name}`;
                 mapSel.appendChild(opt);
             });
 
-            GAME_MODE_OPTIONS.forEach((m) => {
+            modeOptions.forEach((m) => {
                 const opt = document.createElement('option');
                 opt.value = String(m.id);
                 opt.textContent = `${m.id} - ${m.name}`;
                 modeSel.appendChild(opt);
             });
 
-            mapSel.value = '0';
-            modeSel.value = '0';
+            modeProfiles.forEach((profile) => {
+                const opt = document.createElement('option');
+                opt.value = profile;
+                opt.textContent = profile;
+                modeProfileSel.appendChild(opt);
+            });
+
+            mapSel.value = String(mapOptions[0].id);
+            modeSel.value = String(modeOptions[0].id);
+            modeProfileSel.value = modeProfiles.includes('classic') ? 'classic' : modeProfiles[0];
         }
 
         function updateJoinButton() {
@@ -891,8 +942,12 @@
                 `Nome: ${selected.name}`,
                 `Mapa: ${getMapName(selected.mapId)} (${selected.mapId})`,
                 `Modo: ${selected.mode}`,
+                `Profile: ${selected.modeProfile || 'classic'}`,
                 `Players: ${selected.size}/${selected.maxPlayers || '?'}`,
                 `MatchId: ${selected.matchId}`,
+                `Seed: ${selected.seed ?? '-'}`,
+                `RecipeHash: ${selected.recipeHash || '-'}`,
+                `ContentVersion: ${selected.contentVersion || '-'}`,
                 selected.hasPassword ? 'Sala privada: SIM' : 'Sala privada: NAO'
             ];
 
@@ -1072,6 +1127,7 @@
                 name,
                 mapId: parseInt(document.getElementById('create-map').value || '0', 10),
                 gameTypeId: parseInt(document.getElementById('create-mode').value || '0', 10),
+                modeProfile: (document.getElementById('create-mode-profile').value || 'classic').trim() || 'classic',
                 maxPlayers: parseInt(document.getElementById('create-max').value || '8', 10),
                 round: parseInt(document.getElementById('create-round').value || '10', 10),
                 limitTime: parseInt(document.getElementById('create-time').value || '5', 10),
@@ -1177,6 +1233,8 @@
                 return;
             }
 
+            stageIntegrityError = '';
+            clientReadySentForStage = '';
             stageChatReset();
             switchToStageView();
             requestActiveStageState();
@@ -1203,6 +1261,8 @@
         function exitStageView() {
             activeStageMatchId = '';
             activeStageState = null;
+            stageIntegrityError = '';
+            clientReadySentForStage = '';
             document.getElementById('stage-view').classList.add('hidden');
             document.getElementById('channel-view').classList.remove('hidden');
             stopStageStateTimer();
@@ -1251,8 +1311,21 @@
             request_stage_state(activeStageMatchId);
         }
 
+        function maybeSendClientReady(stage) {
+            if (!stage || !activeStageMatchId) return;
+            if (!window.send_client_ready) return;
+            if (clientReadySentForStage === activeStageMatchId) return;
+            const recipeHash = String(stage.recipeHash || '');
+            const contentHash = String(stage.contentHash || '');
+            send_client_ready(recipeHash, contentHash);
+            clientReadySentForStage = activeStageMatchId;
+        }
+
         function onStageState(state) {
             activeStageState = state || null;
+            if (activeStageState && activeStageState.stage) {
+                maybeSendClientReady(activeStageState.stage);
+            }
             renderStageState();
         }
 
@@ -1271,11 +1344,13 @@
         function renderStageState() {
             const title = document.getElementById('stage-room-title');
             const sub = document.getElementById('stage-room-sub');
+            const tech = document.getElementById('stage-tech-sub');
             const list = document.getElementById('stage-players-list');
 
             if (!activeStageState || !activeStageState.stage) {
                 title.textContent = 'ROOM';
                 sub.textContent = `matchId: ${activeStageMatchId || '-'}`;
+                tech.textContent = 'seed: - / recipe: - / content: -';
                 list.innerHTML = '';
                 return;
             }
@@ -1283,6 +1358,10 @@
             const stage = activeStageState.stage;
             title.textContent = stage.name || 'Room';
             sub.textContent = `${getMapName(stage.mapId)} / ${stage.mode || 'MODE'} / ${activeStageMatchId}`;
+            const seedText = Number.isFinite(Number(stage.seed)) ? Number(stage.seed) : '-';
+            const recipeText = stage.recipeHash ? String(stage.recipeHash) : '-';
+            const contentVersion = stage.contentVersion || (bootstrapV2 && bootstrapV2.contentVersion) || '-';
+            tech.textContent = `seed: ${seedText} / recipe: ${recipeText} / content: ${contentVersion}`;
 
             const players = Object.values(activeStageState.players || {});
             list.innerHTML = '';
@@ -1320,12 +1399,17 @@
             const isMaster = !!(stage.masterUserId && stage.masterUserId === sessionInfo.userId);
             const btnReady = document.getElementById('btn-ready');
             btnReady.textContent = me && me.ready ? 'UNREADY' : 'READY';
+            btnReady.disabled = !!stageIntegrityError;
 
-            document.getElementById('btn-start').disabled = !isMaster;
+            document.getElementById('btn-start').disabled = !isMaster || !!stageIntegrityError;
             document.getElementById('btn-end').disabled = !isMaster;
         }
 
         function toggleReady() {
+            if (stageIntegrityError) {
+                setStatus(stageIntegrityError, false);
+                return;
+            }
             const me = getMyPlayerState();
             const target = !(me && me.ready);
             if (!window.set_stage_ready) return;
@@ -1356,6 +1440,10 @@
         }
 
         function startStageMatch() {
+            if (stageIntegrityError) {
+                setStatus(stageIntegrityError, false);
+                return;
+            }
             if (!window.stage_start) return;
             stage_start(activeStageMatchId);
         }
@@ -1416,6 +1504,38 @@
             const scope = info && info.scope ? info.scope : 'lobby';
             const message = info && info.message ? info.message : 'erro desconhecido';
             setStatus(`[${scope}] ${message}`, false);
+        }
+
+        function onBootstrapV2(data) {
+            if (!data || data.ok === false) {
+                const reason = data && (data.reason || data.message) ? (data.reason || data.message) : 'bootstrap_v2 indisponivel';
+                setStatus(`Bootstrap v2 falhou: ${reason}`, false);
+                return;
+            }
+            bootstrapV2 = data;
+            applyBootstrapData(data);
+            const cv = data.contentVersion || '-';
+            setStatus(`Bootstrap v2 carregado. contentVersion=${cv}`);
+        }
+
+        function onGameDataResult(result) {
+            if (!result) return;
+            if (result.error) {
+                appendLog('channel-chat-log', `[SYSTEM] game_data(${result.key || ''}) erro: ${result.error}`, 'error');
+            }
+        }
+
+        function onRtProtocolError(err) {
+            const code = err && err.code ? String(err.code) : 'RT_PROTOCOL_ERROR';
+            const detail = err && (err.detail || err.message) ? String(err.detail || err.message) : 'erro desconhecido';
+            if (code === 'CONTENT_HASH_MISMATCH') {
+                stageIntegrityError = `Integridade falhou (${code}). Reentre na sala.`;
+                appendLog('stage-chat-log', `[SYSTEM] ${detail}`, 'error');
+                setStatus(stageIntegrityError, false);
+                renderStageState();
+                return;
+            }
+            appendLog('stage-chat-log', `[SYSTEM] ${code}: ${detail}`, 'error');
         }
 
         function onSessionInfo(info) {
@@ -1503,6 +1623,11 @@
                 ? parsedData.payload
                 : parsedData;
 
+            if (opCode === 1099 && payload) {
+                onRtProtocolError(payload);
+                return;
+            }
+
             if (opCode === 4107 && payload) {
                 const name = payload.username || payload.userId || 'SYSTEM';
                 const text = payload.message || '';
@@ -1530,6 +1655,12 @@
         window.onload = () => {
             fillCreateOptions();
             appendLog('channel-chat-log', '[SYSTEM] Lobby carregado.', 'system');
+
+            if (window.fetch_bootstrap_v2) {
+                fetch_bootstrap_v2();
+            } else {
+                setStatus('Bridge fetch_bootstrap_v2 indisponivel.', false);
+            }
 
             if (window.list_characters) list_characters();
             refreshStageList();
@@ -1562,6 +1693,9 @@
         window.onStageRtMessage = onStageRtMessage;
         window.onSessionInfo = onSessionInfo;
         window.onCharacterList = onCharacterList;
+        window.onBootstrapV2 = onBootstrapV2;
+        window.onGameDataResult = onGameDataResult;
+        window.onRtProtocolError = onRtProtocolError;
     </script>
 </body>
 </html>

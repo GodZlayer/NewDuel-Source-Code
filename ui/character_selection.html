@@ -138,27 +138,11 @@
             <label for="char-name">Nome</label>
             <input id="char-name" maxlength="16" placeholder="Digite o nome" />
             <label for="char-sex">Sexo</label>
-            <select id="char-sex">
-                <option value="0">Masculino</option>
-                <option value="1">Feminino</option>
-            </select>
+            <select id="char-sex"></select>
             <label for="char-face">Rosto</label>
-            <select id="char-face">
-                <option value="0">Rosto 1</option>
-                <option value="1">Rosto 2</option>
-                <option value="2">Rosto 3</option>
-                <option value="3">Rosto 4</option>
-                <option value="4">Rosto 5</option>
-            </select>
+            <select id="char-face"></select>
             <label for="char-preset">Preset Inicial</label>
-            <select id="char-preset">
-                <option value="0">Preset 1</option>
-                <option value="1">Preset 2</option>
-                <option value="2">Preset 3</option>
-                <option value="3">Preset 4</option>
-                <option value="4">Preset 5</option>
-                <option value="5">Preset 6</option>
-            </select>
+            <select id="char-preset"></select>
             <div class="modal-actions">
                 <button class="btn-secondary" onclick="closeCreateModal()">Cancelar</button>
                 <button id="btn-create-confirm" onclick="handleCreateCharacter()">Criar</button>
@@ -186,11 +170,58 @@
         let selectedName = '';
         let creatingInSlot = -1;
         let isCreatingMode = false;
+        let characterCreateConfig = {
+            maxNameLength: 16,
+            sexValues: [0, 1],
+            faceValues: [0, 1, 2, 3],
+            hairValues: [0],
+            costumeValues: [0, 1, 2]
+        };
 
         function setStatus(text, ok = true) {
             const el = document.getElementById('status');
             el.textContent = text;
             el.style.color = ok ? '#7fc7ff' : '#ff7f7f';
+        }
+
+        function firstOf(arr, fallback = 0) {
+            return Array.isArray(arr) && arr.length > 0 ? Number(arr[0]) : Number(fallback);
+        }
+
+        function normalizeCharCreate(data) {
+            const cfg = data && data.characterCreate ? data.characterCreate : {};
+            const sexValues = Array.isArray(cfg.sexValues) && cfg.sexValues.length ? cfg.sexValues.map(Number) : [0, 1];
+            const faceValues = Array.isArray(cfg.faceValues) && cfg.faceValues.length ? cfg.faceValues.map(Number) : [0, 1, 2, 3];
+            const hairValues = Array.isArray(cfg.hairValues) && cfg.hairValues.length ? cfg.hairValues.map(Number) : [0];
+            const costumeValues = Array.isArray(cfg.costumeValues) && cfg.costumeValues.length ? cfg.costumeValues.map(Number) : [0, 1, 2];
+            return {
+                maxNameLength: Number.isFinite(Number(cfg.maxNameLength)) ? Number(cfg.maxNameLength) : 16,
+                sexValues,
+                faceValues,
+                hairValues,
+                costumeValues
+            };
+        }
+
+        function fillSelect(selectId, values, labelPrefix, labelResolver = null) {
+            const sel = document.getElementById(selectId);
+            sel.innerHTML = '';
+            values.forEach((value, index) => {
+                const opt = document.createElement('option');
+                opt.value = String(value);
+                opt.textContent = labelResolver ? labelResolver(value, index) : `${labelPrefix} ${index + 1}`;
+                sel.appendChild(opt);
+            });
+            if (values.length > 0) sel.value = String(values[0]);
+        }
+
+        function applyCharacterCreateConfig(config) {
+            characterCreateConfig = config;
+            const maxLen = Number.isFinite(Number(config.maxNameLength)) ? Number(config.maxNameLength) : 16;
+            document.getElementById('char-name').maxLength = maxLen;
+            fillSelect('char-sex', config.sexValues, 'Sexo', (value) => Number(value) === 1 ? 'Feminino' : 'Masculino');
+            fillSelect('char-face', config.faceValues, 'Rosto');
+            fillSelect('char-preset', config.costumeValues, 'Preset');
         }
 
         function findCharacterById(id) {
@@ -214,9 +245,9 @@
             modal.classList.add('open');
             const nameInput = document.getElementById('char-name');
             nameInput.value = '';
-            document.getElementById('char-sex').value = '0';
-            document.getElementById('char-face').value = '0';
-            document.getElementById('char-preset').value = '0';
+            document.getElementById('char-sex').value = String(firstOf(characterCreateConfig.sexValues, 0));
+            document.getElementById('char-face').value = String(firstOf(characterCreateConfig.faceValues, 0));
+            document.getElementById('char-preset').value = String(firstOf(characterCreateConfig.costumeValues, 0));
             updateActionButtons();
             setStatus(`MODO DE CRIACAO ativo (slot ${slotIndex + 1}). Ajuste sexo/rosto/preset e confirme.`);
             setTimeout(() => nameInput.focus(), 0);
@@ -269,7 +300,7 @@
             const sex = parseInt(document.getElementById('char-sex').value || '0', 10);
             const face = parseInt(document.getElementById('char-face').value || '0', 10);
             const preset = parseInt(document.getElementById('char-preset').value || '0', 10);
-            const hair = 0;
+            const hair = firstOf(characterCreateConfig.hairValues, 0);
             if (!name) {
                 setStatus('Informe um nome para o personagem.', false);
                 return;
@@ -307,13 +338,33 @@
             delete_character(selectedId);
         }
 
+        function applyPreviewForCharacter(charData) {
+            if (!charData || !window.set_character_preview) return false;
+            const sex = Number.isFinite(Number(charData.sex)) ? Number(charData.sex) : 0;
+            const face = Number.isFinite(Number(charData.face)) ? Number(charData.face) : firstOf(characterCreateConfig.faceValues, 0);
+            const preset = firstOf(characterCreateConfig.costumeValues, 0);
+            const hair = Number.isFinite(Number(charData.hair)) ? Number(charData.hair) : firstOf(characterCreateConfig.hairValues, 0);
+            if (window.set_preview_visible) set_preview_visible(true);
+            const ok = !!set_character_preview(sex, face, preset, hair);
+            if (!ok) {
+                const sexLabel = sex === 1 ? 'feminino' : 'masculino';
+                setStatus(`Preview indisponivel: pacote ${sexLabel} ausente ou invalido.`, false);
+            }
+            return ok;
+        }
+
         function applyPreviewFromForm() {
-            if (!window.set_character_preview) return;
+            if (!window.set_character_preview) return false;
             const sex = parseInt(document.getElementById('char-sex').value || '0', 10);
             const face = parseInt(document.getElementById('char-face').value || '0', 10);
             const preset = parseInt(document.getElementById('char-preset').value || '0', 10);
-            const hair = 0;
-            set_character_preview(sex, face, preset, hair);
+            const hair = firstOf(characterCreateConfig.hairValues, 0);
+            const ok = !!set_character_preview(sex, face, preset, hair);
+            if (!ok) {
+                const sexLabel = sex === 1 ? 'feminino' : 'masculino';
+                setStatus(`Preview indisponivel: pacote ${sexLabel} ausente ou invalido.`, false);
+            }
+            return ok;
         }
 
         function handleSelectCharacter() {
@@ -336,6 +387,8 @@
         window.onload = () => {
             document.body.tabIndex = 0;
             document.body.focus();
+            applyCharacterCreateConfig(characterCreateConfig);
+            if (window.fetch_bootstrap_v2) fetch_bootstrap_v2();
             if (window.list_characters) list_characters();
         };
 
@@ -362,12 +415,43 @@
         document.getElementById('char-face').addEventListener('change', applyPreviewFromForm);
         document.getElementById('char-preset').addEventListener('change', applyPreviewFromForm);
 
+        window.onBootstrapV2 = (data) => {
+            if (!data || data.ok === false) {
+                const reason = data && (data.reason || data.message) ? (data.reason || data.message) : 'bootstrap indisponivel';
+                setStatus(`Bootstrap v2 falhou: ${reason}`, false);
+                return;
+            }
+            const cfg = normalizeCharCreate(data);
+            applyCharacterCreateConfig(cfg);
+            setStatus('Bootstrap v2 carregado para criacao de personagem.');
+            if (isCreatingMode) applyPreviewFromForm();
+        };
+
+        window.onGameDataResult = (_result) => {};
+        window.onRtProtocolError = (err) => {
+            const code = err && err.code ? String(err.code) : 'RT_PROTOCOL_ERROR';
+            const detail = err && (err.detail || err.message) ? String(err.detail || err.message) : 'erro desconhecido';
+            setStatus(`${code}: ${detail}`, false);
+        };
+
         window.onCharacterList = (data) => {
             characters = data.characters || [];
 
             if (selectedId && !findCharacterById(selectedId)) {
                 selectedId = null;
                 selectedName = '';
+            }
+
+            const activeCharId = data && data.activeCharId ? String(data.activeCharId) : null;
+            if (!isCreatingMode && !selectedId && activeCharId && findCharacterById(activeCharId)) {
+                selectedId = activeCharId;
+                const activeChar = findCharacterById(activeCharId);
+                selectedName = activeChar ? (activeChar.name || '') : '';
+            }
+
+            if (!isCreatingMode && !selectedId && characters.length > 0) {
+                selectedId = characters[0].id;
+                selectedName = characters[0].name || '';
             }
 
             const container = document.getElementById('slots');
@@ -385,6 +469,7 @@
                         selectedName = char.name || '';
                         updateActionButtons();
                         window.onCharacterList(data);
+                        applyPreviewForCharacter(char);
                         setStatus(`Selecionado: ${char.name}`);
                     };
                     slot.innerHTML = `<div class="char-info"><h2>${char.name.toUpperCase()}</h2><p>LV${char.level}</p></div>`;
@@ -397,6 +482,15 @@
             }
 
             updateActionButtons();
+
+            if (!isCreatingMode) {
+                const selected = selectedId ? findCharacterById(selectedId) : null;
+                if (selected) {
+                    applyPreviewForCharacter(selected);
+                } else if (window.set_preview_visible) {
+                    set_preview_visible(false);
+                }
+            }
 
             if (!isCreatingMode && characters.length === 0 && window.set_preview_visible) {
                 set_preview_visible(false);

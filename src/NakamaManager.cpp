@@ -3,6 +3,7 @@
 #include <iostream>
 #include <algorithm>
 #include <cstdio>
+#include <chrono>
 
 namespace Nakama {
 
@@ -216,6 +217,18 @@ void NakamaManager::createStage(const std::string& createJson, std::function<voi
     rpcCall("create_stage", payload, callback);
 }
 
+void NakamaManager::getBootstrapV2(std::function<void(bool, const std::string&)> callback) {
+    rpcCall("get_bootstrap_v2", "{\"clientVersion\":\"ndg-local\",\"rtVersion\":1}", callback);
+}
+
+void NakamaManager::getGameData(const std::string& key, std::function<void(bool, const std::string&)> callback) {
+    if (key.empty()) {
+        rpcCall("get_game_data", "{}", callback);
+        return;
+    }
+    rpcCall("get_game_data", "{\"key\":\"" + escapeJson(key) + "\"}", callback);
+}
+
 void NakamaManager::joinStage(const std::string& matchId, const std::string& password, std::function<void(bool, const std::string&)> callback) {
     if (matchId.empty()) {
         callback(false, "matchId vazio");
@@ -372,6 +385,17 @@ void NakamaManager::joinMatch(std::function<void(bool, const std::string&)> call
 void NakamaManager::sendMatchData(int64_t opCode, const std::string& data) {
     if (!_rtClient || !_session || _currentStageMatchId.empty()) return;
     _rtClient->sendMatchData(_currentStageMatchId, opCode, data);
+}
+
+void NakamaManager::sendClientReady(const std::string& recipeHash, const std::string& contentHash) {
+    if (!_rtClient || !_session || _currentStageMatchId.empty()) return;
+    const auto nowMs = std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::system_clock::now().time_since_epoch()).count();
+    const std::string payload =
+        "{\"v\":1,\"t\":" + std::to_string(nowMs) +
+        ",\"payload\":{\"recipeHash\":\"" + escapeJson(recipeHash) +
+        "\",\"contentHash\":\"" + escapeJson(contentHash) + "\"}}";
+    _rtClient->sendMatchData(_currentStageMatchId, 4108, payload);
 }
 
 } // namespace Nakama

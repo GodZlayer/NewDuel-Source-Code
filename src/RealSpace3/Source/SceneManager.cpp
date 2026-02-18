@@ -1,9 +1,6 @@
 #include "../Include/SceneManager.h"
-#include "../Include/RBspObject.h"
 #include "../Include/RScene.h"
 #include "AppLogger.h"
-#include <d3dcompiler.h>
-#include <algorithm>
 
 namespace RealSpace3 {
 
@@ -26,7 +23,7 @@ void SceneManager::loadLobbyBasic() {
     m_pDevice->GetImmediateContext(&context);
     m_pCurrentScene = std::make_unique<RScene>(m_pDevice, context.Get());
     m_pCurrentScene->LoadLobbyBasic();
-    AppLogger::Log("[RS3_AUDIT] SceneManager::loadLobbyBasic -> lobby scene loaded.");
+    AppLogger::Log("[RS3] SceneManager::loadLobbyBasic -> basic scene loaded.");
 }
 
 void SceneManager::update(float deltaTime) {
@@ -36,10 +33,6 @@ void SceneManager::update(float deltaTime) {
 void SceneManager::draw(ID3D11DeviceContext* context) {
     if (!m_pCurrentScene) return;
 
-    static int frameCheck = 0;
-    bool shouldLog = (++frameCheck % 60 == 0);
-
-    // 1. Configurar viewport para janela atual
     D3D11_VIEWPORT vp;
     vp.Width = static_cast<float>(m_width);
     vp.Height = static_cast<float>(m_height);
@@ -49,41 +42,31 @@ void SceneManager::draw(ID3D11DeviceContext* context) {
     vp.TopLeftY = 0;
     context->RSSetViewports(1, &vp);
 
-    // 2. Carregar câmera do dummy
-    DirectX::XMFLOAT3 camPos = { 0.0f, -500.0f, 200.0f };
-    DirectX::XMFLOAT3 camDir = { 0.0f, 500.0f, -100.0f };
+    DirectX::XMFLOAT3 camPos = { 0.0f, -800.0f, 220.0f };
+    DirectX::XMFLOAT3 camDir = { 0.0f, 1.0f, -0.2f };
     m_pCurrentScene->GetPreferredCamera(camPos, camDir);
 
-    // 3. Look-at: preferir spawn do mapa (onde personagem nasce)
     const DirectX::XMVECTOR eye = DirectX::XMVectorSet(camPos.x, camPos.y, camPos.z, 0.0f);
-    DirectX::XMVECTOR at;
-    DirectX::XMFLOAT3 spawnPos;
-    if (m_pCurrentScene->GetSpawnPos(spawnPos)) {
-        at = DirectX::XMVectorSet(spawnPos.x, spawnPos.y, spawnPos.z, 0.0f);
-    } else {
-        // Fallback: usar camDir normalizado e escalado
-        DirectX::XMVECTOR dir = DirectX::XMVectorSet(camDir.x, camDir.y, camDir.z, 0.0f);
-        dir = DirectX::XMVector3Normalize(dir);
-        dir = DirectX::XMVectorScale(dir, 1000.0f);
-        at = DirectX::XMVectorAdd(eye, dir);
-    }
+    DirectX::XMVECTOR dir = DirectX::XMVectorSet(camDir.x, camDir.y, camDir.z, 0.0f);
+    dir = DirectX::XMVector3Normalize(dir);
+    dir = DirectX::XMVectorScale(dir, 1000.0f);
+    DirectX::XMVECTOR at = DirectX::XMVectorAdd(eye, dir);
 
-    DirectX::XMMATRIX view = DirectX::XMMatrixLookAtLH(
+    const DirectX::XMMATRIX view = DirectX::XMMatrixLookAtLH(
         eye,
         at,
         DirectX::XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f)
     );
-    float aspect = static_cast<float>(m_width) / static_cast<float>(m_height);
-    DirectX::XMMATRIX proj = DirectX::XMMatrixPerspectiveFovLH(DirectX::XM_PI * 60.0f / 180.0f, aspect, 1.0f, 20000.0f);
-    DirectX::XMMATRIX viewProj = view * proj;
+    const float aspect = static_cast<float>(m_width) / static_cast<float>(m_height);
+    const DirectX::XMMATRIX proj =
+        DirectX::XMMatrixPerspectiveFovLH(DirectX::XM_PI * 60.0f / 180.0f, aspect, 1.0f, 20000.0f);
 
-    if (shouldLog) AppLogger::Log("[RS3_AUDIT] SceneManager::draw calling RScene::Draw");
-    m_pCurrentScene->Draw(context, viewProj);
+    m_pCurrentScene->Draw(context, view * proj);
 }
 
-void SceneManager::setCreationPreview(int sex, int face, int preset, int hair) {
-    if (!m_pCurrentScene) return;
-    m_pCurrentScene->SetCreationPreview(sex, face, preset, hair);
+bool SceneManager::setCreationPreview(int sex, int face, int preset, int hair) {
+    if (!m_pCurrentScene) return false;
+    return m_pCurrentScene->SetCreationPreview(sex, face, preset, hair);
 }
 
 void SceneManager::setCreationPreviewVisible(bool visible) {
@@ -98,4 +81,4 @@ void SceneManager::setSize(int w, int h) {
     }
 }
 
-}
+} // namespace RealSpace3

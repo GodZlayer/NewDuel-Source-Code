@@ -175,13 +175,13 @@ public:
         });
 
         bind("set_character_preview", [](JSContextRef ctx, JSObjectRef f, JSObjectRef t, size_t argc, const JSValueRef argv[], JSValueRef* ex) -> JSValueRef {
-            if (argc < 4) return JSValueMakeUndefined(ctx);
+            if (argc < 4) return JSValueMakeBoolean(ctx, false);
             const int sex = static_cast<int>(JSValueToNumber(ctx, argv[0], nullptr));
             const int face = static_cast<int>(JSValueToNumber(ctx, argv[1], nullptr));
             const int preset = static_cast<int>(JSValueToNumber(ctx, argv[2], nullptr));
             const int hair = static_cast<int>(JSValueToNumber(ctx, argv[3], nullptr));
-            RealSpace3::SceneManager::getInstance().setCreationPreview(sex, face, preset, hair);
-            return JSValueMakeUndefined(ctx);
+            const bool ok = RealSpace3::SceneManager::getInstance().setCreationPreview(sex, face, preset, hair);
+            return JSValueMakeBoolean(ctx, ok);
         });
 
         bind("set_preview_visible", [](JSContextRef ctx, JSObjectRef f, JSObjectRef t, size_t argc, const JSValueRef argv[], JSValueRef* ex) -> JSValueRef {
@@ -218,6 +218,41 @@ public:
                     SendToUI("onCreateStageResult", "{\"success\":false,\"message\":\"" + JsonEscape(response) + "\"}");
                 }
             });
+            return JSValueMakeUndefined(ctx);
+        });
+
+        bind("fetch_bootstrap_v2", [](JSContextRef ctx, JSObjectRef f, JSObjectRef t, size_t argc, const JSValueRef argv[], JSValueRef* ex) -> JSValueRef {
+            Nakama::NakamaManager::getInstance().getBootstrapV2([](bool s, const std::string& response) {
+                if (s) {
+                    SendToUI("onBootstrapV2", response);
+                } else {
+                    const std::string msg = JsonEscape(response);
+                    SendToUI("onBootstrapV2", "{\"ok\":false,\"reason\":\"rpc_error\",\"message\":\"" + msg + "\"}");
+                    SendToUI("onRtProtocolError", "{\"code\":\"BOOTSTRAP_ERROR\",\"detail\":\"" + msg + "\"}");
+                }
+            });
+            return JSValueMakeUndefined(ctx);
+        });
+
+        bind("fetch_game_data", [](JSContextRef ctx, JSObjectRef f, JSObjectRef t, size_t argc, const JSValueRef argv[], JSValueRef* ex) -> JSValueRef {
+            const std::string key = (argc >= 1) ? JSValueToStdString(ctx, argv[0]) : "";
+            Nakama::NakamaManager::getInstance().getGameData(key, [key](bool s, const std::string& response) {
+                const std::string safeKey = JsonEscape(key);
+                if (s) {
+                    SendToUI("onGameDataResult", "{\"key\":\"" + safeKey + "\",\"data\":" + response + "}");
+                } else {
+                    const std::string msg = JsonEscape(response);
+                    SendToUI("onGameDataResult", "{\"key\":\"" + safeKey + "\",\"data\":null,\"error\":\"" + msg + "\"}");
+                    SendToUI("onRtProtocolError", "{\"code\":\"GAME_DATA_ERROR\",\"detail\":\"" + msg + "\"}");
+                }
+            });
+            return JSValueMakeUndefined(ctx);
+        });
+
+        bind("send_client_ready", [](JSContextRef ctx, JSObjectRef f, JSObjectRef t, size_t argc, const JSValueRef argv[], JSValueRef* ex) -> JSValueRef {
+            const std::string recipeHash = (argc >= 1) ? JSValueToStdString(ctx, argv[0]) : "";
+            const std::string contentHash = (argc >= 2) ? JSValueToStdString(ctx, argv[1]) : "";
+            Nakama::NakamaManager::getInstance().sendClientReady(recipeHash, contentHash);
             return JSValueMakeUndefined(ctx);
         });
 
