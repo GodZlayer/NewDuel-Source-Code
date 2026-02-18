@@ -69,6 +69,13 @@
             font-size: 11px;
             letter-spacing: 1px;
             text-transform: uppercase;
+            cursor: pointer;
+        }
+
+        .ghost-btn.active {
+            border-color: var(--accent);
+            color: #ffffff;
+            background: rgba(0, 163, 255, 0.2) !important;
             cursor: default;
         }
 
@@ -562,10 +569,10 @@
         <div class="top-strip">
             <div class="logo">GUNZ LOBBY</div>
             <div class="top-actions">
-                <button class="ghost-btn" disabled>SHOP</button>
-                <button class="ghost-btn" disabled>EQUIP</button>
-                <button class="ghost-btn" disabled>CHANNEL</button>
-                <button class="ghost-btn" disabled>OPTION</button>
+                <button class="ghost-btn" onclick="openScene('shop')">SHOP</button>
+                <button class="ghost-btn" onclick="openScene('equip')">EQUIP</button>
+                <button class="ghost-btn active" disabled>CHANNEL</button>
+                <button class="ghost-btn" onclick="openScene('options')">OPTION</button>
             </div>
         </div>
 
@@ -780,6 +787,25 @@
 
         let sessionInfo = { userId: '', username: '' };
         let profileInfo = null;
+
+        function openScene(sceneName) {
+            const scene = String(sceneName || '').toLowerCase();
+            if (!scene || scene === 'channel' || scene === 'lobby') return;
+            if (scene === 'shop') {
+                if (window.go_shop) go_shop();
+                else window.location.href = 'shop.html';
+                return;
+            }
+            if (scene === 'equip') {
+                if (window.go_equip) go_equip();
+                else window.location.href = 'equip.html';
+                return;
+            }
+            if (scene === 'options') {
+                if (window.go_options) go_options();
+                else window.location.href = 'options.html';
+            }
+        }
 
         function setStatus(text, ok = true) {
             const el = document.getElementById('status');

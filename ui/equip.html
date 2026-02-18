@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html style="background: transparent !important;">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        * { box-sizing: border-box; background: transparent !important; }
+        :root {
+            --bg: rgba(6, 10, 16, 0.86);
+            --bg-soft: rgba(9, 14, 22, 0.68);
+            --line: rgba(0, 163, 255, 0.35);
+            --line-soft: rgba(255, 255, 255, 0.1);
+            --text: #e8f3ff;
+            --text-soft: #9fb4c9;
+            --accent: #00a3ff;
+            --warn: #f4cb63;
+            --danger: #d95a5a;
+            --ok: #59cc8b;
+        }
+        html, body {
+            margin: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: Consolas, "Courier New", monospace;
+            color: var(--text);
+        }
+        .root { width: 100%; height: 100%; display: flex; flex-direction: column; gap: 10px; padding: 12px; }
+        .top-strip {
+            height: 74px;
+            border: 1px solid var(--line);
+            background: var(--bg) !important;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+        }
+        .logo { font-size: 20px; letter-spacing: 4px; color: #fff; text-transform: uppercase; }
+        .top-actions { display: flex; gap: 8px; align-items: center; }
+        .ghost-btn {
+            min-width: 92px;
+            height: 34px;
+            border: 1px solid var(--line-soft);
+            color: var(--text-soft);
+            background: rgba(16, 24, 34, 0.85) !important;
+            font-size: 11px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            cursor: pointer;
+        }
+        .ghost-btn.active {
+            border-color: var(--accent);
+            color: #fff;
+            background: rgba(0, 163, 255, 0.2) !important;
+            cursor: default;
+        }
+        .sub-strip {
+            height: 34px;
+            border: 1px solid var(--line);
+            background: rgba(7, 13, 21, 0.84) !important;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 12px;
+            font-size: 11px;
+            color: var(--text-soft);
+            gap: 10px;
+        }
+        .sub-strip-right { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .main {
+            flex: 1;
+            min-height: 0;
+            display: grid;
+            grid-template-columns: 370px 1fr;
+            gap: 10px;
+        }
+        .panel {
+            border: 1px solid var(--line);
+            background: var(--bg) !important;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+        }
+        .title {
+            height: 30px;
+            border-bottom: 1px solid var(--line-soft);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 0 10px;
+            font-size: 11px;
+            color: var(--accent);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .body {
+            flex: 1;
+            min-height: 0;
+            padding: 10px;
+            overflow: auto;
+            font-size: 11px;
+            color: var(--text-soft);
+        }
+        .char-select {
+            width: 100%;
+            height: 30px;
+            border: 1px solid var(--line-soft);
+            background: rgba(0, 0, 0, 0.3) !important;
+            color: #fff;
+            font-family: inherit;
+            font-size: 11px;
+            margin-bottom: 10px;
+        }
+        .char-name { font-size: 15px; color: #fff; letter-spacing: 1px; margin-bottom: 8px; text-transform: uppercase; }
+        .line { margin: 4px 0; color: #9bc2e4; }
+        .slot-list { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+        .slot-row {
+            border: 1px solid var(--line-soft);
+            background: var(--bg-soft) !important;
+            padding: 6px;
+            display: grid;
+            grid-template-columns: 74px 1fr auto;
+            gap: 8px;
+            align-items: center;
+        }
+        .slot-key { color: #8ec2ef; text-transform: uppercase; font-size: 10px; letter-spacing: 1px; }
+        .slot-item { color: #fff; }
+        .slot-clear {
+            height: 24px;
+            border: 1px solid rgba(217, 90, 90, 0.45);
+            background: rgba(217, 90, 90, 0.2) !important;
+            color: #ffd9d9;
+            font-size: 10px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            cursor: pointer;
+            padding: 0 8px;
+        }
+        .inv-layout {
+            height: 100%;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .inv-card {
+            border: 1px solid var(--line-soft);
+            background: rgba(0, 0, 0, 0.2) !important;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+        }
+        .inv-card-title {
+            height: 28px;
+            border-bottom: 1px solid var(--line-soft);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 8px;
+            color: #cce6ff;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 10px;
+        }
+        .inv-card-body {
+            flex: 1;
+            min-height: 0;
+            overflow: auto;
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .inv-row {
+            border: 1px solid var(--line-soft);
+            background: rgba(10, 16, 26, 0.7) !important;
+            padding: 6px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .inv-name { color: #fff; font-size: 11px; }
+        .inv-meta { color: #95b7d2; font-size: 10px; }
+        .inv-actions { display: flex; gap: 6px; align-items: center; }
+        .inv-actions select {
+            flex: 1;
+            min-width: 94px;
+            height: 24px;
+            border: 1px solid var(--line-soft);
+            background: rgba(0, 0, 0, 0.3) !important;
+            color: #fff;
+            font-family: inherit;
+            font-size: 10px;
+        }
+        .btn-mini {
+            height: 24px;
+            border: 1px solid rgba(0, 163, 255, 0.45);
+            background: rgba(0, 163, 255, 0.18) !important;
+            color: #e8f6ff;
+            font-size: 10px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            cursor: pointer;
+            padding: 0 8px;
+        }
+        .btn-mini.warn {
+            border-color: rgba(217, 90, 90, 0.45);
+            background: rgba(217, 90, 90, 0.2) !important;
+            color: #ffd9d9;
+        }
+        .footer {
+            border: 1px solid var(--line-soft);
+            background: rgba(5, 11, 18, 0.84) !important;
+            padding: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+        }
+        .footer-actions { display: flex; gap: 8px; }
+        .btn {
+            min-width: 140px;
+            height: 30px;
+            border: 1px solid var(--line-soft);
+            background: rgba(16, 24, 34, 0.9) !important;
+            color: #dfefff;
+            font-size: 11px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            cursor: pointer;
+        }
+        .btn.primary {
+            border-color: rgba(0, 163, 255, 0.55);
+            color: #fff;
+            background: rgba(0, 163, 255, 0.2) !important;
+        }
+        .status {
+            height: 26px;
+            border: 1px solid var(--line-soft);
+            background: rgba(5, 11, 18, 0.84) !important;
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            font-size: 11px;
+            color: #8db6dc;
+        }
+        .empty {
+            border: 1px dashed var(--line-soft);
+            padding: 10px;
+            color: #8ea6ba;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 10px;
+        }
+        @media (max-width: 1200px) {
+            .main { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 980px) {
+            .inv-layout { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="root">
+        <div class="top-strip">
+            <div class="logo">GUNZ EQUIP</div>
+            <div class="top-actions">
+                <button class="ghost-btn" onclick="navigateTo('shop')">SHOP</button>
+                <button class="ghost-btn active" disabled>EQUIP</button>
+                <button class="ghost-btn" onclick="navigateTo('lobby')">CHANNEL</button>
+                <button class="ghost-btn" onclick="navigateTo('options')">OPTION</button>
+            </div>
+        </div>
+
+        <div class="sub-strip">
+            <div id="session-state">SESSION: -</div>
+            <div class="sub-strip-right" id="equip-state">EQUIP ONLINE</div>
+        </div>
+
+        <div class="main">
+            <div class="panel">
+                <div class="title">
+                    <span>Character Loadout</span>
+                    <button class="btn-mini" onclick="refreshAll()">Refresh</button>
+                </div>
+                <div class="body" id="char-body"></div>
+            </div>
+
+            <div class="panel">
+                <div class="title">Inventory and Character Bag</div>
+                <div class="body">
+                    <div class="inv-layout">
+                        <div class="inv-card">
+                            <div class="inv-card-title">
+                                <span>Account Inventory</span>
+                                <span id="account-count">0</span>
+                            </div>
+                            <div class="inv-card-body" id="account-list"></div>
+                        </div>
+                        <div class="inv-card">
+                            <div class="inv-card-title">
+                                <span>Character Inventory</span>
+                                <span id="char-count">0</span>
+                            </div>
+                            <div class="inv-card-body" id="char-list"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <div id="footer-info">Select a character to manage equipment.</div>
+            <div class="footer-actions">
+                <button class="btn" onclick="goCharSelect()">CHAR SELECT</button>
+                <button class="btn primary" onclick="refreshAll()">REFRESH DATA</button>
+            </div>
+        </div>
+
+        <div id="status" class="status">Equip scene loaded.</div>
+    </div>
+
+    <script>
+        const SLOT_ORDER = ['head', 'chest', 'hands', 'legs', 'feet', 'melee', 'primary', 'secondary', 'item1', 'item2', 'fingerl', 'fingerr'];
+        const SLOT_LABEL = {
+            head: 'Head', chest: 'Chest', hands: 'Hands', legs: 'Legs', feet: 'Feet',
+            melee: 'Melee', primary: 'Primary', secondary: 'Secondary', item1: 'Item1', item2: 'Item2',
+            fingerl: 'Finger L', fingerr: 'Finger R'
+        };
+
+        let sessionInfo = { userId: '', username: '' };
+        let bootstrap = null;
+        let stringsById = {};
+        let zitemById = {};
+        let characters = [];
+        let selectedCharId = '';
+        let accountInventory = [];
+        let charInventory = [];
+
+        function setStatus(text, ok) {
+            const el = document.getElementById('status');
+            el.textContent = text;
+            el.style.color = ok === false ? '#ff9f9f' : '#8db6dc';
+        }
+
+        function safeParse(value, fallback) {
+            try {
+                if (typeof value === 'string') return JSON.parse(value);
+                if (value && typeof value === 'object') return value;
+            } catch (_) {}
+            return fallback;
+        }
+
+        function unwrapRpcData(data) {
+            const obj = safeParse(data, data);
+            if (!obj || typeof obj !== 'object') return null;
+            if (obj.data !== undefined) return obj.data;
+            return obj;
+        }
+
+        function normalizeStringKey(value) {
+            const raw = String(value || '').trim();
+            if (!raw) return '';
+            if (raw.indexOf('STR:') === 0) return raw.substring(4);
+            return raw;
+        }
+
+        function resolveText(rawValue, fallback) {
+            const key = normalizeStringKey(rawValue);
+            if (key && Object.prototype.hasOwnProperty.call(stringsById, key)) {
+                return String(stringsById[key] || fallback || key);
+            }
+            if (typeof rawValue === 'string' && rawValue.trim()) return rawValue.trim();
+            return fallback || '-';
+        }
+
+        function navigateTo(scene) {
+            const key = String(scene || '').toLowerCase();
+            if (key === 'lobby') {
+                if (window.go_lobby) go_lobby();
+                else window.location.href = 'lobby.html';
+                return;
+            }
+            if (key === 'shop') {
+                if (window.go_shop) go_shop();
+                else window.location.href = 'shop.html';
+                return;
+            }
+            if (key === 'equip') return;
+            if (key === 'options') {
+                if (window.go_options) go_options();
+                else window.location.href = 'options.html';
+            }
+        }
+
+        function goCharSelect() {
+            if (window.go_character_select) go_character_select();
+            else window.location.href = 'character_selection.html';
+        }
+
+        function getSelectedCharacter() {
+            if (!characters.length) return null;
+            for (let i = 0; i < characters.length; i += 1) {
+                if (String(characters[i].id) === String(selectedCharId)) return characters[i];
+            }
+            return characters[0];
+        }
+
+        function itemMetaById(itemId) {
+            const id = Number(itemId);
+            if (!Number.isFinite(id) || id <= 0) return null;
+            return zitemById[id] || null;
+        }
+
+        function itemNameById(itemId) {
+            const meta = itemMetaById(itemId);
+            if (!meta) return 'EMPTY';
+            return resolveText(meta.name, 'ITEM ' + itemId);
+        }
+
+        function resolveEquipSlots(meta) {
+            if (!meta) return [];
+            const slot = String(meta.slot || '').toLowerCase();
+            const type = String(meta.type || '').toLowerCase();
+            const weapon = String(meta.weapon || '').toLowerCase();
+
+            if (slot === 'head') return ['head'];
+            if (slot === 'chest') return ['chest'];
+            if (slot === 'hands') return ['hands'];
+            if (slot === 'legs') return ['legs'];
+            if (slot === 'feet') return ['feet'];
+            if (slot === 'finger') return ['fingerl', 'fingerr'];
+            if (slot === 'melee' || type === 'melee') return ['melee'];
+
+            if (slot === 'custom' || type === 'custom') return ['item1', 'item2'];
+
+            if (slot === 'range' || type === 'range') {
+                if (weapon.indexOf('pistol') !== -1 || weapon.indexOf('revolver') !== -1 || weapon.indexOf('smg') !== -1) {
+                    return ['secondary', 'primary'];
+                }
+                return ['primary', 'secondary'];
+            }
+
+            return [];
+        }
+
+        function normalizeInventoryItem(raw, sourceTag) {
+            if (!raw || !raw.instanceId) return null;
+            const itemId = Number(raw.itemId || 0);
+            const count = Number.isFinite(Number(raw.count)) ? Number(raw.count) : 1;
+            const meta = itemMetaById(itemId);
+            return {
+                source: sourceTag,
+                instanceId: String(raw.instanceId),
+                itemId: itemId,
+                count: count,
+                name: itemNameById(itemId),
+                type: meta ? String(meta.type || '').toLowerCase() : '',
+                slot: meta ? String(meta.slot || '').toLowerCase() : '',
+                equipSlots: resolveEquipSlots(meta)
+            };
+        }
+
+        function applyPreviewForSelectedCharacter() {
+            const ch = getSelectedCharacter();
+            if (!ch || !window.set_character_preview) return;
+            const sex = Number.isFinite(Number(ch.sex)) ? Number(ch.sex) : 0;
+            const face = Number.isFinite(Number(ch.face)) ? Number(ch.face) : 0;
+            const hair = Number.isFinite(Number(ch.hair)) ? Number(ch.hair) : 0;
+            const preset = 0;
+            const ok = !!set_character_preview(sex, face, preset, hair);
+            if (window.set_preview_visible) set_preview_visible(ok);
+        }
+
+        function renderCharacterPanel() {
+            const body = document.getElementById('char-body');
+            body.innerHTML = '';
+            if (!characters.length) {
+                const empty = document.createElement('div');
+                empty.className = 'empty';
+                empty.textContent = 'No character found. Create one in char select.';
+                body.appendChild(empty);
+                return;
+            }
+
+            const select = document.createElement('select');
+            select.className = 'char-select';
+            for (let i = 0; i < characters.length; i += 1) {
+                const ch = characters[i];
+                const option = document.createElement('option');
+                option.value = String(ch.id || '');
+                option.textContent = String(ch.name || 'Unknown') + ' (Lv' + Number(ch.level || 1) + ')';
+                select.appendChild(option);
+            }
+            if (selectedCharId) select.value = String(selectedCharId);
+            select.onchange = function () {
+                selectedCharId = String(select.value || '');
+                refreshCharacterData();
+                applyPreviewForSelectedCharacter();
+            };
+            body.appendChild(select);
+
+            const ch = getSelectedCharacter();
+            if (!ch) return;
+
+            const title = document.createElement('div');
+            title.className = 'char-name';
+            title.textContent = String(ch.name || 'Unknown');
+            body.appendChild(title);
+
+            const lines = [
+                'LEVEL: ' + Number(ch.level || 1),
+                'BOUNTY: ' + Number(ch.bounty || 0),
+                'HP/AP: ' + Number(ch.hp || 100) + '/' + Number(ch.ap || 0),
+                'SEX/FACE/HAIR: ' + Number(ch.sex || 0) + '/' + Number(ch.face || 0) + '/' + Number(ch.hair || 0)
+            ];
+            for (let i = 0; i < lines.length; i += 1) {
+                const line = document.createElement('div');
+                line.className = 'line';
+                line.textContent = lines[i];
+                body.appendChild(line);
+            }
+
+            const slotList = document.createElement('div');
+            slotList.className = 'slot-list';
+            const eq = ch.equipment || {};
+            for (let i = 0; i < SLOT_ORDER.length; i += 1) {
+                const slot = SLOT_ORDER[i];
+                const itemId = Number(eq[slot] || 0);
+
+                const row = document.createElement('div');
+                row.className = 'slot-row';
+
+                const key = document.createElement('div');
+                key.className = 'slot-key';
+                key.textContent = SLOT_LABEL[slot] || slot;
+
+                const item = document.createElement('div');
+                item.className = 'slot-item';
+                item.textContent = itemId > 0 ? itemNameById(itemId) + ' (#' + itemId + ')' : 'EMPTY';
+
+                const clear = document.createElement('button');
+                clear.className = 'slot-clear';
+                clear.textContent = 'Remove';
+                clear.disabled = itemId <= 0;
+                clear.onclick = (function (slotKey) {
+                    return function () {
+                        if (!window.takeoff_item) {
+                            setStatus('Bridge takeoff_item unavailable.', false);
+                            return;
+                        }
+                        const selected = getSelectedCharacter();
+                        if (!selected || !selected.id) return;
+                        takeoff_item(String(selected.id), String(slotKey));
+                        setStatus('Removing item from ' + (SLOT_LABEL[slotKey] || slotKey) + '...');
+                    };
+                })(slot);
+
+                row.appendChild(key);
+                row.appendChild(item);
+                row.appendChild(clear);
+                slotList.appendChild(row);
+            }
+            body.appendChild(slotList);
+
+            document.getElementById('footer-info').textContent = 'Selected: ' + String(ch.name || '-') + ' (#' + String(ch.id || '-') + ')';
+        }
+
+        function renderInventoryList(rootId, rows, isAccount) {
+            const root = document.getElementById(rootId);
+            root.innerHTML = '';
+            if (!rows.length) {
+                const empty = document.createElement('div');
+                empty.className = 'empty';
+                empty.textContent = isAccount ? 'Account inventory empty.' : 'Character inventory empty.';
+                root.appendChild(empty);
+                return;
+            }
+
+            for (let i = 0; i < rows.length; i += 1) {
+                const row = rows[i];
+                const item = document.createElement('div');
+                item.className = 'inv-row';
+
+                const name = document.createElement('div');
+                name.className = 'inv-name';
+                name.textContent = row.name;
+
+                const meta = document.createElement('div');
+                meta.className = 'inv-meta';
+                meta.textContent = 'ID ' + row.itemId + ' | x' + row.count + ' | ' + String(row.type || '-').toUpperCase() + ' | ' + String(row.slot || '-').toUpperCase();
+
+                const actions = document.createElement('div');
+                actions.className = 'inv-actions';
+
+                const slotSel = document.createElement('select');
+                const equipSlots = row.equipSlots && row.equipSlots.length ? row.equipSlots : [''];
+                for (let j = 0; j < equipSlots.length; j += 1) {
+                    const s = equipSlots[j];
+                    const opt = document.createElement('option');
+                    opt.value = s;
+                    opt.textContent = s ? String(SLOT_LABEL[s] || s).toUpperCase() : 'NO SLOT';
+                    slotSel.appendChild(opt);
+                }
+                slotSel.disabled = !equipSlots[0];
+
+                const equipBtn = document.createElement('button');
+                equipBtn.className = 'btn-mini';
+                equipBtn.textContent = 'Equip';
+                equipBtn.disabled = !equipSlots[0];
+                equipBtn.onclick = (function (instanceId) {
+                    return function () {
+                        const selected = getSelectedCharacter();
+                        if (!selected || !selected.id) {
+                            setStatus('No selected character.', false);
+                            return;
+                        }
+                        if (!window.equip_item) {
+                            setStatus('Bridge equip_item unavailable.', false);
+                            return;
+                        }
+                        const targetSlot = String(slotSel.value || '');
+                        if (!targetSlot) {
+                            setStatus('No valid slot for this item.', false);
+                            return;
+                        }
+                        equip_item(String(selected.id), String(instanceId), targetSlot);
+                        setStatus('Equipping item in ' + targetSlot + '...');
+                    };
+                })(row.instanceId);
+
+                actions.appendChild(slotSel);
+                actions.appendChild(equipBtn);
+
+                if (isAccount) {
+                    const moveBtn = document.createElement('button');
+                    moveBtn.className = 'btn-mini';
+                    moveBtn.textContent = 'To Char';
+                    moveBtn.onclick = (function (instanceId) {
+                        return function () {
+                            const selected = getSelectedCharacter();
+                            if (!selected || !selected.id) {
+                                setStatus('No selected character.', false);
+                                return;
+                            }
+                            if (!window.bring_account_item) {
+                                setStatus('Bridge bring_account_item unavailable.', false);
+                                return;
+                            }
+                            bring_account_item(String(selected.id), String(instanceId), 1);
+                            setStatus('Moving item to character inventory...');
+                        };
+                    })(row.instanceId);
+                    actions.appendChild(moveBtn);
+                } else {
+                    const backBtn = document.createElement('button');
+                    backBtn.className = 'btn-mini warn';
+                    backBtn.textContent = 'To Account';
+                    backBtn.onclick = (function (instanceId) {
+                        return function () {
+                            const selected = getSelectedCharacter();
+                            if (!selected || !selected.id) {
+                                setStatus('No selected character.', false);
+                                return;
+                            }
+                            if (!window.bring_back_account_item) {
+                                setStatus('Bridge bring_back_account_item unavailable.', false);
+                                return;
+                            }
+                            bring_back_account_item(String(selected.id), String(instanceId), 1);
+                            setStatus('Moving item back to account...');
+                        };
+                    })(row.instanceId);
+                    actions.appendChild(backBtn);
+                }
+
+                item.appendChild(name);
+                item.appendChild(meta);
+                item.appendChild(actions);
+                root.appendChild(item);
+            }
+        }
+
+        function renderAll() {
+            renderCharacterPanel();
+            renderInventoryList('account-list', accountInventory, true);
+            renderInventoryList('char-list', charInventory, false);
+            document.getElementById('account-count').textContent = String(accountInventory.length);
+            document.getElementById('char-count').textContent = String(charInventory.length);
+        }
+
+        function refreshCharacterData() {
+            const ch = getSelectedCharacter();
+            if (ch && ch.id && window.list_char_inventory) {
+                list_char_inventory(String(ch.id));
+            }
+            if (window.list_inventory) list_inventory();
+            renderAll();
+        }
+
+        function refreshAll() {
+            if (window.list_characters) list_characters();
+            if (window.list_inventory) list_inventory();
+            if (window.fetch_game_data) {
+                fetch_game_data('strings');
+                fetch_game_data('zitem');
+            }
+            if (window.fetch_bootstrap_v2) fetch_bootstrap_v2();
+        }
+
+        function onSessionInfo(info) {
+            if (!info) return;
+            sessionInfo = { userId: info.userId || '', username: info.username || '' };
+            document.getElementById('session-state').textContent = 'SESSION: ' + (sessionInfo.username || '-') + ' / ' + (sessionInfo.userId ? 'OK' : 'NO');
+        }
+
+        function onBootstrapV2(data) {
+            if (!data || data.ok === false) {
+                const reason = data && (data.reason || data.message) ? String(data.reason || data.message) : 'bootstrap unavailable';
+                document.getElementById('equip-state').textContent = 'BOOTSTRAP: FAIL (' + reason + ')';
+                return;
+            }
+            bootstrap = data;
+            const contentVersion = String(data.contentVersion || '-');
+            const profiles = data.serverProfile && data.serverProfile.modeProfiles && data.serverProfile.modeProfiles.length
+                ? data.serverProfile.modeProfiles.join(',') : '-';
+            document.getElementById('equip-state').textContent = 'CONTENT ' + contentVersion + ' | PROFILES ' + profiles;
+        }
+
+        function onGameDataResult(result) {
+            if (!result || result.error) {
+                if (result && result.error) setStatus('game_data(' + (result.key || '?') + ') error: ' + result.error, false);
+                return;
+            }
+
+            const key = String(result.key || '').toLowerCase();
+            const wrapped = unwrapRpcData(result.data);
+
+            if (key === 'strings') {
+                const stringsPayload = wrapped && wrapped.data ? wrapped.data : wrapped;
+                const rows = stringsPayload && stringsPayload.strings && stringsPayload.strings.length ? stringsPayload.strings : [];
+                stringsById = {};
+                for (let i = 0; i < rows.length; i += 1) {
+                    const id = rows[i] && rows[i].id ? String(rows[i].id) : '';
+                    if (!id) continue;
+                    stringsById[id] = String(rows[i].text || id);
+                }
+                renderAll();
+                return;
+            }
+
+            if (key === 'zitem') {
+                const zitemPayload = wrapped && wrapped.data ? wrapped.data : wrapped;
+                const rows = zitemPayload && zitemPayload.items && zitemPayload.items.length ? zitemPayload.items : [];
+                zitemById = {};
+                for (let i = 0; i < rows.length; i += 1) {
+                    const id = Number(rows[i] && rows[i].id);
+                    if (!Number.isFinite(id)) continue;
+                    zitemById[id] = rows[i];
+                }
+                accountInventory = accountInventory.map(function (it) { return normalizeInventoryItem(it, 'account'); }).filter(function (it) { return !!it; });
+                charInventory = charInventory.map(function (it) { return normalizeInventoryItem(it, 'char'); }).filter(function (it) { return !!it; });
+                renderAll();
+            }
+        }
+
+        function onCharacterList(data) {
+            const list = data && data.characters && data.characters.length ? data.characters : [];
+            characters = list.slice(0);
+            const activeId = data && data.activeCharId ? String(data.activeCharId) : '';
+            if (activeId) {
+                selectedCharId = activeId;
+            } else if (!selectedCharId && characters.length) {
+                selectedCharId = String(characters[0].id || '');
+            }
+            refreshCharacterData();
+            applyPreviewForSelectedCharacter();
+        }
+
+        function onInventoryResult(result) {
+            if (!result || !result.success) {
+                setStatus('list_inventory failed: ' + (result && result.message ? result.message : 'unknown'), false);
+                return;
+            }
+            const payload = unwrapRpcData(result.data);
+            const rows = payload && payload.items && payload.items.length ? payload.items : [];
+            const next = [];
+            for (let i = 0; i < rows.length; i += 1) {
+                const item = normalizeInventoryItem(rows[i], 'account');
+                if (item) next.push(item);
+            }
+            accountInventory = next;
+            renderAll();
+        }
+
+        function onCharInventoryResult(result) {
+            if (!result || !result.success) {
+                setStatus('list_char_inventory failed: ' + (result && result.message ? result.message : 'unknown'), false);
+                return;
+            }
+            const payload = unwrapRpcData(result.data);
+            const rows = payload && payload.items && payload.items.length ? payload.items : [];
+            const next = [];
+            for (let i = 0; i < rows.length; i += 1) {
+                const item = normalizeInventoryItem(rows[i], 'char');
+                if (item) next.push(item);
+            }
+            charInventory = next;
+            renderAll();
+        }
+
+        function handleMutationResult(scope, result) {
+            if (!result || !result.success) {
+                setStatus(scope + ' failed: ' + (result && result.message ? result.message : 'unknown'), false);
+                return;
+            }
+            setStatus(scope + ' success.');
+            if (window.list_characters) list_characters();
+            const ch = getSelectedCharacter();
+            if (ch && ch.id && window.list_char_inventory) list_char_inventory(String(ch.id));
+            if (window.list_inventory) list_inventory();
+        }
+
+        function onEquipItemResult(result) { handleMutationResult('equip_item', result); }
+        function onTakeoffItemResult(result) { handleMutationResult('takeoff_item', result); }
+        function onBringAccountItemResult(result) { handleMutationResult('bring_account_item', result); }
+        function onBringBackAccountItemResult(result) { handleMutationResult('bring_back_account_item', result); }
+
+        window.onload = function () {
+            renderAll();
+            refreshAll();
+            setStatus('Equip ready. Waiting server data.');
+        };
+
+        window.onSessionInfo = onSessionInfo;
+        window.onBootstrapV2 = onBootstrapV2;
+        window.onGameDataResult = onGameDataResult;
+        window.onCharacterList = onCharacterList;
+        window.onInventoryResult = onInventoryResult;
+        window.onCharInventoryResult = onCharInventoryResult;
+        window.onEquipItemResult = onEquipItemResult;
+        window.onTakeoffItemResult = onTakeoffItemResult;
+        window.onBringAccountItemResult = onBringAccountItemResult;
+        window.onBringBackAccountItemResult = onBringBackAccountItemResult;
+    </script>
+</body>
+</html>

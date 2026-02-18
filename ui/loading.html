@@ -3,135 +3,545 @@
 <head>
     <meta charset="UTF-8">
     <style>
-        body {
-            background-color: #000000;
-            background: radial-gradient(circle at center, #000814 0%, #000000 100%);
-            color: #ffffff;
-            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+        * { box-sizing: border-box; }
+
+        :root {
+            --bg-0: #020510;
+            --bg-1: #07162a;
+            --line: rgba(120, 222, 255, 0.42);
+            --line-soft: rgba(166, 229, 255, 0.2);
+            --text: #e9f8ff;
+            --text-soft: #8caec8;
+            --accent: #00c4ff;
+            --accent-2: #55ffe0;
+            --ok: #5dffb6;
+            --err: #ff6f82;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
             margin: 0;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
             overflow: hidden;
         }
 
-        .spinner-wrap {
+        body {
             position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: "Bahnschrift", "Segoe UI", "Consolas", monospace;
+            color: var(--text);
+            isolation: isolate;
+            background:
+                radial-gradient(circle at 22% 20%, rgba(0, 178, 255, 0.28), transparent 34%),
+                radial-gradient(circle at 82% 74%, rgba(57, 255, 230, 0.1), transparent 36%),
+                radial-gradient(circle at 50% 48%, rgba(8, 46, 89, 0.52), transparent 48%),
+                linear-gradient(170deg, var(--bg-0), var(--bg-1) 58%, #020914);
+        }
+
+        body::before {
+            content: "";
+            position: absolute;
+            inset: -35%;
+            background:
+                radial-gradient(1px 1px at 10% 20%, rgba(255, 255, 255, 0.82), transparent 50%),
+                radial-gradient(1px 1px at 18% 72%, rgba(167, 229, 255, 0.7), transparent 50%),
+                radial-gradient(1px 1px at 34% 36%, rgba(127, 219, 255, 0.8), transparent 50%),
+                radial-gradient(1px 1px at 52% 84%, rgba(255, 255, 255, 0.72), transparent 50%),
+                radial-gradient(1px 1px at 64% 38%, rgba(112, 215, 255, 0.64), transparent 50%),
+                radial-gradient(1px 1px at 82% 14%, rgba(189, 242, 255, 0.7), transparent 50%),
+                radial-gradient(1px 1px at 90% 66%, rgba(151, 230, 255, 0.62), transparent 50%);
+            opacity: 0.96;
+            animation: starsDrift 46s linear infinite;
+            pointer-events: none;
+        }
+
+        body::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background:
+                repeating-linear-gradient(
+                    to right,
+                    rgba(255, 255, 255, 0.024) 0,
+                    rgba(255, 255, 255, 0.024) 1px,
+                    transparent 1px,
+                    transparent 92px
+                ),
+                repeating-linear-gradient(
+                    to bottom,
+                    rgba(255, 255, 255, 0.018) 0,
+                    rgba(255, 255, 255, 0.018) 1px,
+                    transparent 1px,
+                    transparent 92px
+                );
+            opacity: 0.26;
+            transform: scale(1.1);
+            animation: gridShift 36s linear infinite;
+            pointer-events: none;
+        }
+
+        .flow-depth {
+            position: absolute;
+            inset: -26%;
+            z-index: 0;
+            pointer-events: none;
+            opacity: 0.74;
+            transform-origin: 50% 100%;
+            transform: perspective(1400px) rotateX(73deg) translateY(36%) scale(1.22);
+            background:
+                radial-gradient(130% 78% at 50% 115%, rgba(0, 152, 245, 0.58), transparent 64%),
+                conic-gradient(from 170deg at 50% 84%, rgba(0, 195, 255, 0.28), rgba(97, 255, 233, 0.14), rgba(0, 184, 255, 0.24), rgba(0, 195, 255, 0.28));
+            filter: blur(22px) saturate(1.05);
+            animation: flowPerspective 19s ease-in-out infinite alternate;
+        }
+
+        .flow-depth::before {
+            content: "";
+            position: absolute;
+            inset: -14%;
+            background:
+                linear-gradient(96deg, transparent 8%, rgba(127, 229, 255, 0.13) 34%, transparent 56%),
+                linear-gradient(116deg, transparent 26%, rgba(100, 255, 233, 0.1) 52%, transparent 78%);
+            filter: blur(16px);
+            animation: flowSweep 10s ease-in-out infinite;
+        }
+
+        .root {
+            position: relative;
+            z-index: 1;
+            width: min(92vw, 860px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            animation: riseIn 880ms cubic-bezier(0.2, 0.88, 0.2, 1);
+        }
+
+        .brand {
+            text-align: center;
+        }
+
+        .brand-title {
+            font-size: clamp(40px, 7vw, 64px);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            font-weight: 700;
+            margin: 0;
+            color: #f2fbff;
+            text-shadow: 0 0 26px rgba(0, 196, 255, 0.42);
+        }
+
+        .brand-sub {
+            margin-top: 6px;
+            letter-spacing: 5px;
+            text-transform: uppercase;
+            font-size: 12px;
+            color: #7adaff;
+        }
+
+        .orbital {
+            position: relative;
+            width: 210px;
+            height: 210px;
+            display: grid;
+            place-items: center;
+        }
+
+        .ring {
+            position: absolute;
+            border-radius: 50%;
+            border: 1px solid rgba(138, 232, 255, 0.35);
+            box-shadow: 0 0 22px rgba(0, 196, 255, 0.16);
+        }
+
+        .ring.outer {
+            width: 210px;
+            height: 210px;
+            animation: spinCW 12s linear infinite;
+        }
+
+        .ring.outer::before {
+            content: "";
+            position: absolute;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            left: 50%;
+            top: -9px;
+            transform: translateX(-50%);
+            background: radial-gradient(circle at 35% 35%, #a8f3ff 0%, #00c4ff 55%, rgba(0, 196, 255, 0) 100%);
+            box-shadow: 0 0 20px rgba(0, 196, 255, 0.72);
+        }
+
+        .ring.mid {
+            width: 160px;
+            height: 160px;
+            border-style: dashed;
+            border-color: rgba(111, 216, 255, 0.45);
+            animation: spinCCW 9.5s linear infinite;
+        }
+
+        .ring.inner {
+            width: 102px;
+            height: 102px;
+            border-color: rgba(90, 208, 255, 0.55);
+            animation: pulseRing 2.8s ease-in-out infinite;
+        }
+
+        .core {
             width: 70px;
             height: 70px;
-            margin-bottom: 40px;
-        }
-
-        .ring-bg {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            border: 1px solid rgba(0, 162, 255, 0.05);
             border-radius: 50%;
-            box-sizing: border-box;
+            border: 1px solid rgba(148, 235, 255, 0.7);
+            background: radial-gradient(circle at 30% 30%, rgba(101, 231, 255, 0.5), rgba(2, 14, 28, 0.95));
+            box-shadow: inset 0 0 24px rgba(0, 196, 255, 0.25), 0 0 24px rgba(0, 196, 255, 0.34);
+            display: grid;
+            place-items: center;
+            animation: coreBreath 2.2s ease-in-out infinite;
         }
 
-        .ring-active {
+        .core svg {
+            width: 28px;
+            height: 28px;
+            stroke: #cff9ff;
+            stroke-width: 1.9;
+            fill: none;
+            filter: drop-shadow(0 0 8px rgba(0, 196, 255, 0.5));
+        }
+
+        .panel {
+            width: min(90vw, 760px);
+            border: 1px solid var(--line);
+            background:
+                linear-gradient(150deg, rgba(6, 18, 34, 0.95), rgba(6, 12, 24, 0.92)),
+                linear-gradient(90deg, rgba(0, 196, 255, 0.07), transparent 45%);
+            box-shadow: 0 20px 48px rgba(0, 0, 0, 0.52), 0 0 42px rgba(0, 196, 255, 0.14);
+            padding: 14px 16px 14px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .panel::before {
+            content: "";
             position: absolute;
-            width: 100%;
-            height: 100%;
-            border: 2px solid transparent;
-            border-top: 2px solid #00a2ff;
-            border-radius: 50%;
-            box-sizing: border-box;
-            animation: spin 1s linear infinite;
+            inset: 0;
+            background: linear-gradient(115deg, transparent 0%, rgba(255, 255, 255, 0.1) 48%, transparent 68%);
+            transform: translateX(-120%);
+            animation: sweep 9s ease-in-out infinite;
+            pointer-events: none;
         }
 
-        @keyframes spin {
+        .panel-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 10px;
+            font-size: 11px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--text-soft);
+        }
+
+        .phase {
+            color: var(--accent-2);
+            text-shadow: 0 0 12px rgba(85, 255, 224, 0.36);
+            white-space: nowrap;
+        }
+
+        .log-container {
+            border: 1px solid var(--line-soft);
+            background: linear-gradient(155deg, rgba(3, 12, 22, 0.9), rgba(5, 15, 27, 0.86));
+            min-height: 152px;
+            max-height: 152px;
+            overflow: hidden;
+            padding: 10px 10px 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+        }
+
+        .log-line {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: #9fc4db;
+            animation: lineRise 220ms ease;
+            opacity: 0.92;
+        }
+
+        .log-line .stamp {
+            color: rgba(197, 230, 246, 0.4);
+            min-width: 70px;
+            text-align: right;
+            font-size: 11px;
+        }
+
+        .log-line svg {
+            width: 14px;
+            height: 14px;
+            stroke-width: 2;
+            fill: none;
+        }
+
+        .log-line.pending { color: #89d6ff; }
+        .log-line.pending svg { stroke: #89d6ff; }
+        .log-line.success { color: var(--ok); }
+        .log-line.success svg { stroke: var(--ok); }
+        .log-line.error { color: var(--err); }
+        .log-line.error svg { stroke: var(--err); }
+
+        .progress-wrap {
+            margin-top: 12px;
+            height: 8px;
+            border: 1px solid rgba(153, 228, 255, 0.3);
+            background: rgba(1, 12, 21, 0.85);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, rgba(0, 196, 255, 0.72), rgba(108, 255, 236, 0.95));
+            box-shadow: 0 0 24px rgba(0, 196, 255, 0.58);
+            transition: width 180ms linear;
+            position: relative;
+        }
+
+        .bar::after {
+            content: "";
+            position: absolute;
+            right: 0;
+            top: -3px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #d9ffff;
+            box-shadow: 0 0 18px rgba(118, 255, 240, 0.95);
+            opacity: 0.9;
+        }
+
+        .progress-meta {
+            margin-top: 7px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--text-soft);
+        }
+
+        .progress-meta .percent {
+            color: var(--accent-2);
+            text-shadow: 0 0 12px rgba(85, 255, 224, 0.4);
+        }
+
+        @keyframes spinCW {
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
         }
 
-        .log-container {
-            width: 450px;
-            height: 90px;
-            border-left: 1px solid rgba(0, 162, 255, 0.2);
-            padding-left: 20px;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-end;
-            overflow: hidden;
-            margin-bottom: 25px;
+        @keyframes spinCCW {
+            from { transform: rotate(360deg); }
+            to { transform: rotate(0deg); }
         }
 
-        .log-line {
-            font-size: 9px;
-            line-height: 1.6;
-            letter-spacing: 1px;
-            color: #444;
-            text-transform: uppercase;
-            animation: fadeIn 0.2s forwards;
+        @keyframes pulseRing {
+            0%, 100% { transform: scale(1); opacity: 0.95; }
+            50% { transform: scale(1.06); opacity: 0.7; }
         }
 
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-
-        .log-line.active { color: #00a2ff; font-weight: bold; }
-        .log-line.success { color: #00ff88; }
-
-        .progress-wrap {
-            width: 450px;
-            height: 1px;
-            background: rgba(255, 255, 255, 0.03);
-            position: relative;
+        @keyframes coreBreath {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.08); }
         }
 
-        #bar {
-            position: absolute;
-            height: 100%;
-            width: 0%;
-            background: #00a2ff;
-            transition: width 0.1s linear;
-            box-shadow: 0 0 10px #00a2ff;
+        @keyframes starsDrift {
+            0% { transform: translate3d(0, 0, 0) scale(1); }
+            100% { transform: translate3d(-140px, -90px, 0) scale(1.03); }
         }
 
-        .timestamp { color: rgba(255, 255, 255, 0.1); margin-right: 10px; }
+        @keyframes gridShift {
+            0% { transform: scale(1.1) translateX(0); }
+            100% { transform: scale(1.1) translateX(92px); }
+        }
+
+        @keyframes flowPerspective {
+            0% { transform: perspective(1400px) rotateX(73deg) translateY(36%) scale(1.22) translateX(-8%); opacity: 0.68; }
+            50% { transform: perspective(1400px) rotateX(72deg) translateY(33%) scale(1.26) translateX(5%); opacity: 0.82; }
+            100% { transform: perspective(1400px) rotateX(74deg) translateY(38%) scale(1.2) translateX(12%); opacity: 0.7; }
+        }
+
+        @keyframes flowSweep {
+            0% { transform: translateX(-12%) translateY(3%); opacity: 0.45; }
+            50% { transform: translateX(8%) translateY(-1%); opacity: 0.84; }
+            100% { transform: translateX(14%) translateY(0); opacity: 0.42; }
+        }
+
+        @keyframes sweep {
+            0% { transform: translateX(-120%); }
+            45% { transform: translateX(115%); }
+            100% { transform: translateX(115%); }
+        }
+
+        @keyframes lineRise {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 0.92; transform: translateY(0); }
+        }
+
+        @keyframes riseIn {
+            from { opacity: 0; transform: translateY(16px) scale(0.99); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        @media (max-width: 780px) {
+            .root {
+                width: min(95vw, 740px);
+                gap: 16px;
+            }
+
+            .orbital {
+                width: 180px;
+                height: 180px;
+            }
+
+            .ring.outer { width: 180px; height: 180px; }
+            .ring.mid { width: 134px; height: 134px; }
+            .ring.inner { width: 86px; height: 86px; }
+            .core { width: 62px; height: 62px; }
+
+            .log-container {
+                min-height: 140px;
+                max-height: 140px;
+            }
+
+            .log-line {
+                font-size: 11px;
+            }
+        }
     </style>
 </head>
 <body>
-    <div class="spinner-wrap">
-        <div class="ring-bg"></div>
-        <div class="ring-active"></div>
-    </div>
+    <div class="flow-depth" aria-hidden="true"></div>
+    <div class="root">
+        <div class="brand">
+            <h1 class="brand-title">OpenGunZ</h1>
+            <div class="brand-sub">Core Link Sequence</div>
+        </div>
 
-    <div class="log-container" id="log-box">
-        <div class="log-line active">AGUARDANDO INICIALIZACAO DO CORE...</div>
-    </div>
+        <div class="orbital" aria-hidden="true">
+            <div class="ring outer"></div>
+            <div class="ring mid"></div>
+            <div class="ring inner"></div>
+            <div class="core">
+                <svg viewBox="0 0 24 24">
+                    <rect x="6" y="6" width="12" height="12" rx="2"></rect>
+                    <path d="M9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 15h3M1 9h3M1 15h3"></path>
+                </svg>
+            </div>
+        </div>
 
-    <div class="progress-wrap">
-        <div id="bar"></div>
+        <div class="panel">
+            <div class="panel-head">
+                <div>Telemetria de Inicializacao</div>
+                <div id="phase" class="phase">Aguardando Core</div>
+            </div>
+
+            <div class="log-container" id="log-box">
+                <div class="log-line pending">
+                    <span class="stamp">[--:--:--]</span>
+                    <span>
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <circle cx="12" cy="12" r="9"></circle>
+                            <path d="M12 7v5l3 2"></path>
+                        </svg>
+                    </span>
+                    <span>Aguardando inicializacao do core...</span>
+                </div>
+            </div>
+
+            <div class="progress-wrap">
+                <div id="bar" class="bar"></div>
+            </div>
+
+            <div class="progress-meta">
+                <span id="loading-label">Loading</span>
+                <span id="percent-label" class="percent">0%</span>
+            </div>
+        </div>
     </div>
 
     <script>
         const logBox = document.getElementById('log-box');
         const bar = document.getElementById('bar');
+        const phase = document.getElementById('phase');
+        const percentLabel = document.getElementById('percent-label');
+
+        const ICONS = {
+            pending: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>',
+            success: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="m8.5 12.5 2.5 2.5 4.5-5"></path></svg>',
+            error: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="m9 9 6 6M15 9l-6 6"></path></svg>'
+        };
+
+        function nowStamp() {
+            const now = new Date();
+            const hh = String(now.getHours()).padStart(2, '0');
+            const mm = String(now.getMinutes()).padStart(2, '0');
+            const ss = String(now.getSeconds()).padStart(2, '0');
+            return `[${hh}:${mm}:${ss}]`;
+        }
+
+        function classifyStatus(text) {
+            const up = String(text || '').toUpperCase();
+            if (up.includes('ERRO') || up.includes('FAIL') || up.includes('FALH')) return 'error';
+            if (up.includes('OK') || up.includes('CONCLUIDO') || up.includes('OPERACIONAL') || up.includes('PRONTO')) return 'success';
+            return 'pending';
+        }
+
+        function setPhaseFromMessage(text) {
+            const clean = String(text || '').replace(/\.+$/, '').trim();
+            if (!clean) return;
+            phase.textContent = clean.length > 30 ? clean.slice(0, 30) + '...' : clean;
+        }
+
+        function appendLog(msg) {
+            const tone = classifyStatus(msg);
+            const line = document.createElement('div');
+            line.className = 'log-line ' + tone;
+            line.innerHTML =
+                '<span class="stamp">' + nowStamp() + '</span>' +
+                '<span>' + ICONS[tone] + '</span>' +
+                '<span>' + String(msg || '').toUpperCase() + '</span>';
+
+            logBox.appendChild(line);
+            if (logBox.childNodes.length > 7) {
+                logBox.removeChild(logBox.firstChild);
+            }
+        }
 
         window.setProgress = (p) => {
-            bar.style.width = p + '%';
+            const n = Number(p);
+            const clamped = Number.isFinite(n) ? Math.max(0, Math.min(100, n)) : 0;
+            bar.style.width = clamped.toFixed(2) + '%';
+            percentLabel.textContent = Math.round(clamped) + '%';
+
+            if (clamped >= 99.8) {
+                document.getElementById('loading-label').textContent = 'Finalizando';
+            }
         };
 
         window.setStatus = (msg) => {
-            const line = document.createElement('div');
-            const isSuccess = msg.includes('OK') || msg.includes('CONCLUIDO') || msg.includes('OPERACIONAL');
-            line.className = 'log-line ' + (isSuccess ? 'success' : 'active');
-            
-            const now = new Date();
-            const time = now.getHours().toString().padStart(2, '0') + ":" + 
-                         now.getMinutes().toString().padStart(2, '0') + ":" + 
-                         now.getSeconds().toString().padStart(2, '0');
-
-            line.innerHTML = `<span class="timestamp">[${time}]</span> ${msg.toUpperCase()}`;
-            logBox.appendChild(line);
-
-            if (logBox.childNodes.length > 6) {
-                logBox.removeChild(logBox.firstChild);
-            }
+            const text = String(msg || '').trim();
+            if (!text) return;
+            appendLog(text);
+            setPhaseFromMessage(text);
         };
     </script>
 </body>

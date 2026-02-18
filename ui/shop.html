@@ -1,0 +1,1198 @@
+<!DOCTYPE html>
+<html style="background: transparent !important;">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        * { box-sizing: border-box; background: transparent !important; }
+        :root {
+            --bg-0: rgba(3, 8, 16, 0.9);
+            --bg-1: rgba(7, 14, 24, 0.88);
+            --bg-2: rgba(9, 20, 36, 0.8);
+            --line: rgba(0, 183, 255, 0.35);
+            --line-soft: rgba(255, 255, 255, 0.12);
+            --text: #ecf6ff;
+            --text-soft: #97b6cf;
+            --text-dim: #6e8ba3;
+            --accent: #00b2ff;
+            --accent-2: #00ffd0;
+            --warn: #ffcf5f;
+            --danger: #ff6f7a;
+            --ok: #54e6a8;
+            --panel-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+        }
+        html, body {
+            margin: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: Consolas, "Courier New", monospace;
+            color: var(--text);
+        }
+        body {
+            position: relative;
+            background:
+                radial-gradient(circle at 15% 15%, rgba(0, 163, 255, 0.22), transparent 36%),
+                radial-gradient(circle at 82% 24%, rgba(0, 255, 214, 0.12), transparent 32%),
+                linear-gradient(145deg, #020712 0%, #040a18 52%, #02050d 100%);
+        }
+        body::before {
+            content: '';
+            position: absolute;
+            inset: -20%;
+            background:
+                repeating-linear-gradient(
+                    to right,
+                    rgba(255, 255, 255, 0.03) 0,
+                    rgba(255, 255, 255, 0.03) 1px,
+                    transparent 1px,
+                    transparent 60px
+                ),
+                repeating-linear-gradient(
+                    to bottom,
+                    rgba(255, 255, 255, 0.02) 0,
+                    rgba(255, 255, 255, 0.02) 1px,
+                    transparent 1px,
+                    transparent 60px
+                );
+            animation: gridDrift 26s linear infinite;
+            pointer-events: none;
+            opacity: 0.35;
+        }
+        body::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(120deg, transparent 0%, rgba(0, 178, 255, 0.06) 45%, transparent 70%);
+            transform: translateX(-120%);
+            animation: scanSweep 7.5s ease-in-out infinite;
+            pointer-events: none;
+        }
+        @keyframes gridDrift {
+            from { transform: translate3d(0, 0, 0); }
+            to { transform: translate3d(60px, 60px, 0); }
+        }
+        @keyframes scanSweep {
+            0% { transform: translateX(-120%); }
+            45% { transform: translateX(110%); }
+            100% { transform: translateX(110%); }
+        }
+        @keyframes pulseLine {
+            0%, 100% { box-shadow: 0 0 0 rgba(0, 178, 255, 0.0); }
+            50% { box-shadow: 0 0 28px rgba(0, 178, 255, 0.22); }
+        }
+        @keyframes floatY {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-4px); }
+        }
+        @keyframes cubeSpin {
+            from { transform: rotateX(-16deg) rotateY(0deg); }
+            to { transform: rotateX(-16deg) rotateY(360deg); }
+        }
+
+        .root {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding: 12px;
+        }
+        .panel-glass {
+            border: 1px solid var(--line);
+            background: linear-gradient(150deg, var(--bg-0), var(--bg-1)) !important;
+            box-shadow: var(--panel-shadow);
+            backdrop-filter: blur(2px);
+            position: relative;
+            overflow: hidden;
+        }
+        .panel-glass::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.07) 45%, transparent 70%);
+            transform: translateX(-140%);
+            animation: scanSweep 9s ease-in-out infinite;
+            pointer-events: none;
+            opacity: 0.4;
+        }
+
+        .top-strip {
+            height: 76px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            animation: pulseLine 3.8s ease-in-out infinite;
+        }
+        .logo {
+            font-size: 21px;
+            letter-spacing: 6px;
+            color: #fff;
+            text-transform: uppercase;
+            text-shadow: 0 0 20px rgba(0, 178, 255, 0.25);
+        }
+        .top-sub {
+            margin-top: 2px;
+            font-size: 10px;
+            letter-spacing: 2px;
+            color: var(--accent-2);
+            opacity: 0.8;
+        }
+        .top-actions { display: flex; gap: 8px; align-items: center; }
+        .ghost-btn {
+            min-width: 92px;
+            height: 34px;
+            border: 1px solid var(--line-soft);
+            color: var(--text-soft);
+            background: linear-gradient(145deg, rgba(14, 24, 38, 0.95), rgba(10, 18, 28, 0.88)) !important;
+            font-size: 11px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.16s ease;
+        }
+        .ghost-btn:hover { border-color: rgba(0,178,255,0.55); color: #dff4ff; transform: translateY(-1px); }
+        .ghost-btn.active {
+            border-color: var(--accent);
+            color: #fff;
+            background: linear-gradient(145deg, rgba(0, 178, 255, 0.38), rgba(0, 178, 255, 0.15)) !important;
+            cursor: default;
+            box-shadow: 0 0 22px rgba(0, 178, 255, 0.22);
+        }
+
+        .sub-strip {
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 12px;
+            font-size: 11px;
+            color: var(--text-soft);
+            gap: 10px;
+        }
+        .sub-strip-right { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+        .main {
+            flex: 1;
+            min-height: 0;
+            display: grid;
+            grid-template-columns: 190px 1fr 360px;
+            gap: 10px;
+        }
+        .panel {
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+        }
+        .title {
+            height: 32px;
+            border-bottom: 1px solid var(--line-soft);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 0 10px;
+            font-size: 11px;
+            color: var(--accent);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            text-shadow: 0 0 12px rgba(0, 178, 255, 0.25);
+        }
+        .body {
+            flex: 1;
+            min-height: 0;
+            padding: 10px;
+            overflow: auto;
+            font-size: 11px;
+            color: var(--text-soft);
+        }
+
+        .char-chip {
+            border: 1px solid rgba(0, 178, 255, 0.35);
+            background: linear-gradient(145deg, rgba(6,16,26,0.95), rgba(7,22,32,0.8)) !important;
+            padding: 8px;
+            margin-bottom: 10px;
+            animation: floatY 3.2s ease-in-out infinite;
+        }
+        .char-chip-name { color: #fff; font-size: 12px; }
+        .char-chip-meta { color: #8eb9d9; font-size: 10px; margin-top: 2px; }
+
+        .cat-btn {
+            width: 100%;
+            height: 34px;
+            margin-bottom: 6px;
+            border: 1px solid var(--line-soft);
+            background: linear-gradient(145deg, rgba(6,16,25,0.92), rgba(8,14,22,0.8)) !important;
+            color: #cfe5fb;
+            text-align: left;
+            padding: 0 10px;
+            font-size: 11px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.14s ease;
+        }
+        .cat-btn:hover { border-color: rgba(0,178,255,0.5); transform: translateX(1px); }
+        .cat-btn.active {
+            border-color: var(--accent);
+            color: #fff;
+            background: linear-gradient(145deg, rgba(0,178,255,0.34), rgba(0,178,255,0.14)) !important;
+            box-shadow: inset 0 0 22px rgba(0, 178, 255, 0.15);
+        }
+
+        .search-row { display: flex; gap: 6px; align-items: center; margin-bottom: 10px; }
+        .search-row input {
+            flex: 1;
+            height: 30px;
+            border: 1px solid var(--line-soft);
+            background: rgba(0, 0, 0, 0.36) !important;
+            color: #fff;
+            font-family: inherit;
+            font-size: 11px;
+            padding: 0 8px;
+            outline: none;
+        }
+        .search-row input:focus { border-color: rgba(0,178,255,0.65); box-shadow: 0 0 14px rgba(0,178,255,0.18); }
+        .search-row button {
+            height: 30px;
+            border: 1px solid var(--line-soft);
+            background: linear-gradient(145deg, rgba(16,24,34,0.96), rgba(11,19,29,0.9)) !important;
+            color: #dfefff;
+            font-family: inherit;
+            font-size: 10px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            cursor: pointer;
+            padding: 0 12px;
+        }
+
+        .item-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(185px, 1fr));
+            gap: 10px;
+        }
+        .item-card {
+            border: 1px solid var(--line-soft);
+            background: linear-gradient(150deg, rgba(8,15,24,0.9), rgba(5,10,18,0.9)) !important;
+            padding: 9px;
+            min-height: 176px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            cursor: pointer;
+            transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+            transform-style: preserve-3d;
+        }
+        .item-card:hover {
+            transform: translateY(-3px) rotateX(2deg);
+            border-color: rgba(0,178,255,0.55);
+            box-shadow: 0 14px 30px rgba(0,0,0,0.45), 0 0 24px rgba(0,178,255,0.12);
+        }
+        .item-card.selected {
+            border-color: var(--accent);
+            box-shadow: 0 0 26px rgba(0,178,255,0.22);
+            background: linear-gradient(150deg, rgba(9,21,35,0.95), rgba(7,15,26,0.92)) !important;
+        }
+        .item-name { color: #fff; font-size: 12px; min-height: 30px; line-height: 1.25; }
+        .item-meta { color: #86afcc; font-size: 10px; text-transform: uppercase; }
+        .item-desc { color: #a8c1d6; line-height: 1.35; flex: 1; min-height: 54px; }
+        .item-price { color: var(--warn); font-size: 11px; }
+        .item-buy {
+            height: 30px;
+            border: 1px solid rgba(0, 178, 255, 0.65);
+            background: linear-gradient(145deg, rgba(0,178,255,0.34), rgba(0,178,255,0.16)) !important;
+            color: #fff;
+            font-size: 10px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.16s ease;
+        }
+        .item-buy:hover { filter: brightness(1.1); }
+
+        .showcase-wrap { display: flex; flex-direction: column; gap: 10px; height: 100%; }
+        .showcase-stage {
+            border: 1px solid rgba(0,178,255,0.35);
+            min-height: 236px;
+            background:
+                radial-gradient(circle at 50% 22%, rgba(0,178,255,0.2), transparent 60%),
+                linear-gradient(160deg, rgba(8,18,30,0.96), rgba(6,12,20,0.92)) !important;
+            position: relative;
+            overflow: hidden;
+        }
+        .showcase-stage::before {
+            content: '';
+            position: absolute;
+            inset: 8% 10%;
+            border: 1px solid rgba(0,255,208,0.22);
+            transform: perspective(900px) rotateX(62deg) scale(1.15);
+            transform-origin: center;
+            border-radius: 50%;
+            pointer-events: none;
+            animation: pulseLine 2.8s ease-in-out infinite;
+        }
+        .holo-cube {
+            position: absolute;
+            width: 138px;
+            height: 138px;
+            left: calc(50% - 69px);
+            top: 52px;
+            transform-style: preserve-3d;
+            animation: cubeSpin 15s linear infinite;
+        }
+        .holo-face {
+            position: absolute;
+            inset: 0;
+            border: 1px solid rgba(0,178,255,0.5);
+            background: linear-gradient(145deg, rgba(0,178,255,0.18), rgba(0,178,255,0.06));
+            box-shadow: inset 0 0 24px rgba(0,178,255,0.15);
+        }
+        .holo-face.front { transform: translateZ(69px); }
+        .holo-face.back { transform: rotateY(180deg) translateZ(69px); }
+        .holo-face.right { transform: rotateY(90deg) translateZ(69px); }
+        .holo-face.left { transform: rotateY(-90deg) translateZ(69px); }
+        .holo-face.top { transform: rotateX(90deg) translateZ(69px); }
+        .holo-face.bottom { transform: rotateX(-90deg) translateZ(69px); }
+        .holo-icon {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #e8f6ff;
+            filter: drop-shadow(0 0 14px rgba(0,178,255,0.55));
+        }
+        .holo-floor {
+            position: absolute;
+            left: calc(50% - 100px);
+            bottom: 20px;
+            width: 200px;
+            height: 34px;
+            border-radius: 50%;
+            border: 1px solid rgba(0,178,255,0.38);
+            background: radial-gradient(circle at 50% 50%, rgba(0,178,255,0.2), rgba(0,178,255,0.03));
+            animation: pulseLine 2.4s ease-in-out infinite;
+        }
+        .showcase-meta {
+            border: 1px solid var(--line-soft);
+            background: linear-gradient(155deg, rgba(7,14,24,0.95), rgba(5,10,17,0.92)) !important;
+            padding: 9px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            min-height: 182px;
+        }
+        .sc-name { color: #fff; font-size: 13px; }
+        .sc-row { color: #8db5d5; font-size: 10px; text-transform: uppercase; }
+        .sc-desc { color: #b2c8db; font-size: 11px; line-height: 1.4; min-height: 44px; }
+        .sc-compare {
+            border: 1px dashed rgba(0,178,255,0.35);
+            padding: 6px;
+            color: #95bad6;
+            font-size: 10px;
+            min-height: 30px;
+        }
+        .sc-actions { display: flex; gap: 6px; }
+        .sc-buy {
+            flex: 1;
+            height: 30px;
+            border: 1px solid rgba(0,178,255,0.62);
+            background: linear-gradient(145deg, rgba(0,178,255,0.35), rgba(0,178,255,0.14)) !important;
+            color: #fff;
+            font-size: 10px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            cursor: pointer;
+        }
+
+        .inventory-list { display: flex; flex-direction: column; gap: 6px; }
+        .inv-row {
+            border: 1px solid var(--line-soft);
+            background: linear-gradient(155deg, rgba(8,15,24,0.9), rgba(7,12,20,0.86)) !important;
+            padding: 6px;
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 6px;
+            align-items: center;
+        }
+        .inv-name { color: #fff; font-size: 11px; }
+        .inv-meta { color: #90b1cc; font-size: 10px; }
+        .inv-actions button {
+            height: 26px;
+            border: 1px solid rgba(255, 111, 122, 0.52);
+            background: linear-gradient(145deg, rgba(255,111,122,0.28), rgba(255,111,122,0.14)) !important;
+            color: #ffd9dd;
+            font-size: 10px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            cursor: pointer;
+            padding: 0 10px;
+        }
+
+        .status {
+            height: 28px;
+            border: 1px solid var(--line-soft);
+            background: linear-gradient(145deg, rgba(5,11,18,0.95), rgba(7,13,20,0.88)) !important;
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            font-size: 11px;
+            color: #8db6dc;
+        }
+        .empty {
+            border: 1px dashed var(--line-soft);
+            padding: 10px;
+            color: #8ea6ba;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 10px;
+        }
+
+        .inventory-panel { min-height: 195px; }
+
+        @media (max-width: 1320px) {
+            .main { grid-template-columns: 180px 1fr; }
+            .showcase-panel { grid-column: 1 / span 2; }
+        }
+        @media (max-width: 980px) {
+            .main { grid-template-columns: 1fr; }
+            .showcase-panel { grid-column: auto; }
+            .item-grid { grid-template-columns: 1fr 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="root">
+        <div class="top-strip panel-glass">
+            <div>
+                <div class="logo">GUNZ SHOP</div>
+                <div class="top-sub">LIVE MARKET / RS3 UI</div>
+            </div>
+            <div class="top-actions">
+                <button class="ghost-btn active" disabled>SHOP</button>
+                <button class="ghost-btn" onclick="navigateTo('equip')">EQUIP</button>
+                <button class="ghost-btn" onclick="navigateTo('lobby')">CHANNEL</button>
+                <button class="ghost-btn" onclick="navigateTo('options')">OPTION</button>
+            </div>
+        </div>
+
+        <div class="sub-strip panel-glass">
+            <div id="session-state">SESSION: -</div>
+            <div class="sub-strip-right" id="shop-state">SHOP ONLINE</div>
+        </div>
+
+        <div class="main">
+            <div class="panel panel-glass">
+                <div class="title">Categories</div>
+                <div class="body" id="cat-list">
+                    <div class="char-chip" id="char-chip">
+                        <div class="char-chip-name">NO CHARACTER</div>
+                        <div class="char-chip-meta">Preview idle unavailable</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel panel-glass">
+                <div class="title" id="items-title">Items</div>
+                <div class="body">
+                    <div class="search-row">
+                        <input id="search-input" type="text" placeholder="Search item..." />
+                        <button onclick="refreshShop()">Refresh</button>
+                    </div>
+                    <div class="item-grid" id="item-grid"></div>
+                </div>
+            </div>
+
+            <div class="panel panel-glass showcase-panel">
+                <div class="title">Showcase</div>
+                <div class="body showcase-wrap">
+                    <div class="showcase-stage">
+                        <div class="holo-cube" id="holo-cube">
+                            <div class="holo-face front"></div>
+                            <div class="holo-face back"></div>
+                            <div class="holo-face right"></div>
+                            <div class="holo-face left"></div>
+                            <div class="holo-face top"></div>
+                            <div class="holo-face bottom"></div>
+                            <div class="holo-icon" id="showcase-icon"></div>
+                        </div>
+                        <div class="holo-floor"></div>
+                    </div>
+
+                    <div class="showcase-meta">
+                        <div class="sc-name" id="sc-name">Select an item</div>
+                        <div class="sc-row" id="sc-type">TYPE: -</div>
+                        <div class="sc-row" id="sc-req">REQ LV: -</div>
+                        <div class="sc-row" id="sc-price">PRICE: -</div>
+                        <div class="sc-desc" id="sc-desc">Click an item card to inspect before buying.</div>
+                        <div class="sc-compare" id="sc-compare">Character comparison unavailable.</div>
+                        <div class="sc-actions">
+                            <button class="sc-buy" id="sc-buy-1" onclick="buySelected(1)">Buy x1</button>
+                            <button class="sc-buy" id="sc-buy-5" onclick="buySelected(5)">Buy x5</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel panel-glass inventory-panel">
+            <div class="title">
+                <span>Inventory</span>
+                <button onclick="refreshInventory()" style="height:24px;border:1px solid rgba(255,255,255,0.2);color:#d5e9ff;background:rgba(15,22,30,0.9) !important;cursor:pointer;font-size:10px;text-transform:uppercase;letter-spacing:1px;">Refresh</button>
+            </div>
+            <div class="body">
+                <div class="inventory-list" id="inventory-list"></div>
+            </div>
+        </div>
+
+        <div id="status" class="status">Shop scene loaded.</div>
+    </div>
+
+    <script>
+        var CATEGORY_RULES = [
+            { id: 'all', name: 'All', test: function () { return true; } },
+            { id: 'melee', name: 'Melee', test: function (it) { return String(it.type || '').toLowerCase() === 'melee'; } },
+            { id: 'range', name: 'Range', test: function (it) { return String(it.type || '').toLowerCase() === 'range'; } },
+            { id: 'equip', name: 'Equip', test: function (it) { return String(it.type || '').toLowerCase() === 'equip'; } },
+            { id: 'custom', name: 'Custom', test: function (it) { return String(it.type || '').toLowerCase() === 'custom'; } }
+        ];
+
+        var sessionInfo = { userId: '', username: '' };
+        var selectedCategory = 'all';
+        var bootstrap = null;
+        var stringsById = {};
+        var zitemById = {};
+        var shopItems = [];
+        var inventoryItems = [];
+        var selectedItemId = 0;
+        var characters = [];
+        var activeCharacter = null;
+
+        function setStatus(text, ok) {
+            var el = document.getElementById('status');
+            el.textContent = text;
+            el.style.color = ok === false ? '#ff9f9f' : '#8db6dc';
+        }
+
+        function safeParse(value, fallback) {
+            try {
+                if (typeof value === 'string') return JSON.parse(value);
+                if (value && typeof value === 'object') return value;
+            } catch (_) {}
+            return fallback;
+        }
+
+        function unwrapRpcData(data) {
+            var obj = safeParse(data, data);
+            if (!obj || typeof obj !== 'object') return null;
+            if (obj.data !== undefined) return obj.data;
+            return obj;
+        }
+
+        function normalizeStringKey(value) {
+            var raw = String(value || '').trim();
+            if (!raw) return '';
+            if (raw.indexOf('STR:') === 0) return raw.substring(4);
+            return raw;
+        }
+
+        function resolveText(rawValue, fallback) {
+            var key = normalizeStringKey(rawValue);
+            if (key && Object.prototype.hasOwnProperty.call(stringsById, key)) {
+                return String(stringsById[key] || fallback || key);
+            }
+            if (typeof rawValue === 'string' && rawValue.trim()) return rawValue.trim();
+            return fallback || '-';
+        }
+
+        function normalizeShopItem(raw) {
+            if (!raw || !Number.isFinite(Number(raw.id))) return null;
+            var id = Number(raw.id);
+            var meta = zitemById[id] || {};
+            var name = resolveText(raw.name || meta.name, 'ITEM ' + id);
+            var desc = resolveText(meta.desc || raw.desc, 'No description.');
+            var type = String(raw.type || meta.type || '').toLowerCase();
+            var slot = String(raw.slot || meta.slot || '').toLowerCase();
+            var level = Number.isFinite(Number(raw.level)) ? Number(raw.level) : Number(meta.res_level || 0);
+            var price = Number.isFinite(Number(raw.price)) ? Number(raw.price) : Number(meta.bt_price || 0);
+            return {
+                id: id,
+                name: name,
+                desc: desc,
+                type: type,
+                slot: slot,
+                level: Number.isFinite(level) ? level : 0,
+                price: Number.isFinite(price) ? price : 0
+            };
+        }
+
+        function normalizeInventoryItem(raw) {
+            if (!raw || !raw.instanceId) return null;
+            var itemId = Number(raw.itemId || 0);
+            var meta = zitemById[itemId] || {};
+            return {
+                instanceId: String(raw.instanceId),
+                itemId: itemId,
+                count: Number.isFinite(Number(raw.count)) ? Number(raw.count) : 1,
+                name: resolveText(meta.name, 'ITEM ' + itemId),
+                type: String(meta.type || '').toLowerCase(),
+                slot: String(meta.slot || '').toLowerCase(),
+                sellable: Number.isFinite(itemId) && itemId > 0
+            };
+        }
+
+        function iconSvgForItem(item) {
+            var type = item ? String(item.type || '').toLowerCase() : '';
+            var colorA = '#dff6ff';
+            var colorB = '#57d8ff';
+            if (type === 'melee') {
+                return '' +
+                    '<svg width="92" height="92" viewBox="0 0 92 92" xmlns="http://www.w3.org/2000/svg">' +
+                    '<defs><linearGradient id="g1" x1="0" y1="0" x2="1" y2="1"><stop stop-color="' + colorA + '"/><stop offset="1" stop-color="' + colorB + '"/></linearGradient></defs>' +
+                    '<path d="M48 8 L56 16 L44 28 L38 22 Z" fill="url(#g1)"/>' +
+                    '<path d="M44 28 L60 44 L52 52 L36 36 Z" fill="url(#g1)" opacity="0.85"/>' +
+                    '<rect x="26" y="40" width="34" height="7" rx="2" fill="url(#g1)"/>' +
+                    '<rect x="18" y="44" width="18" height="6" rx="2" fill="url(#g1)" opacity="0.75"/>' +
+                    '</svg>';
+            }
+            if (type === 'range') {
+                return '' +
+                    '<svg width="92" height="92" viewBox="0 0 92 92" xmlns="http://www.w3.org/2000/svg">' +
+                    '<defs><linearGradient id="g2" x1="0" y1="0" x2="1" y2="1"><stop stop-color="' + colorA + '"/><stop offset="1" stop-color="' + colorB + '"/></linearGradient></defs>' +
+                    '<circle cx="46" cy="46" r="25" fill="none" stroke="url(#g2)" stroke-width="4"/>' +
+                    '<circle cx="46" cy="46" r="8" fill="none" stroke="url(#g2)" stroke-width="4"/>' +
+                    '<path d="M46 12 V30 M46 62 V80 M12 46 H30 M62 46 H80" stroke="url(#g2)" stroke-width="4" stroke-linecap="round"/>' +
+                    '</svg>';
+            }
+            if (type === 'equip') {
+                return '' +
+                    '<svg width="92" height="92" viewBox="0 0 92 92" xmlns="http://www.w3.org/2000/svg">' +
+                    '<defs><linearGradient id="g3" x1="0" y1="0" x2="1" y2="1"><stop stop-color="' + colorA + '"/><stop offset="1" stop-color="' + colorB + '"/></linearGradient></defs>' +
+                    '<path d="M46 12 L70 24 V44 C70 60 60 73 46 80 C32 73 22 60 22 44 V24 Z" fill="none" stroke="url(#g3)" stroke-width="5"/>' +
+                    '<path d="M46 26 V64" stroke="url(#g3)" stroke-width="4"/>' +
+                    '<path d="M34 40 H58" stroke="url(#g3)" stroke-width="4"/>' +
+                    '</svg>';
+            }
+            return '' +
+                '<svg width="92" height="92" viewBox="0 0 92 92" xmlns="http://www.w3.org/2000/svg">' +
+                '<defs><linearGradient id="g4" x1="0" y1="0" x2="1" y2="1"><stop stop-color="' + colorA + '"/><stop offset="1" stop-color="' + colorB + '"/></linearGradient></defs>' +
+                '<path d="M30 18 H62 L70 32 L62 52 H30 L22 32 Z" fill="none" stroke="url(#g4)" stroke-width="4"/>' +
+                '<path d="M42 52 V72 M50 52 V72" stroke="url(#g4)" stroke-width="4" stroke-linecap="round"/>' +
+                '</svg>';
+        }
+
+        function navigateTo(scene) {
+            var key = String(scene || '').toLowerCase();
+            if (key === 'lobby') {
+                if (window.go_lobby) go_lobby();
+                else window.location.href = 'lobby.html';
+                return;
+            }
+            if (key === 'shop') return;
+            if (key === 'equip') {
+                if (window.go_equip) go_equip();
+                else window.location.href = 'equip.html';
+                return;
+            }
+            if (key === 'options') {
+                if (window.go_options) go_options();
+                else window.location.href = 'options.html';
+            }
+        }
+
+        function updateCharChip() {
+            var root = document.getElementById('char-chip');
+            if (!activeCharacter) {
+                root.innerHTML = '<div class="char-chip-name">NO CHARACTER</div><div class="char-chip-meta">Preview idle unavailable</div>';
+                return;
+            }
+            var name = String(activeCharacter.name || 'Unknown').toUpperCase();
+            var level = Number(activeCharacter.level || 1);
+            var sex = Number(activeCharacter.sex || 0) === 1 ? 'F' : 'M';
+            root.innerHTML = '<div class="char-chip-name">' + name + '</div><div class="char-chip-meta">LV' + level + ' / SEX ' + sex + ' / LIVE PREVIEW ON</div>';
+        }
+
+        function applyCharacterPreview() {
+            if (!activeCharacter || !window.set_character_preview) return;
+            var sex = Number.isFinite(Number(activeCharacter.sex)) ? Number(activeCharacter.sex) : 0;
+            var face = Number.isFinite(Number(activeCharacter.face)) ? Number(activeCharacter.face) : 0;
+            var hair = Number.isFinite(Number(activeCharacter.hair)) ? Number(activeCharacter.hair) : 0;
+            var preset = 0;
+            var ok = !!set_character_preview(sex, face, preset, hair);
+            if (window.set_preview_visible) set_preview_visible(ok);
+        }
+
+        function getCategoryCount(categoryId) {
+            var count = 0;
+            for (var i = 0; i < shopItems.length; i += 1) {
+                var item = shopItems[i];
+                for (var j = 0; j < CATEGORY_RULES.length; j += 1) {
+                    var cat = CATEGORY_RULES[j];
+                    if (cat.id === categoryId && cat.test(item)) {
+                        count += 1;
+                        break;
+                    }
+                }
+            }
+            return count;
+        }
+
+        function renderCategories() {
+            var root = document.getElementById('cat-list');
+            root.innerHTML = '';
+
+            var chip = document.createElement('div');
+            chip.className = 'char-chip';
+            chip.id = 'char-chip';
+            root.appendChild(chip);
+            updateCharChip();
+
+            for (var i = 0; i < CATEGORY_RULES.length; i += 1) {
+                var cat = CATEGORY_RULES[i];
+                var btn = document.createElement('button');
+                btn.className = 'cat-btn' + (cat.id === selectedCategory ? ' active' : '');
+                btn.textContent = cat.name.toUpperCase() + ' (' + getCategoryCount(cat.id) + ')';
+                btn.onclick = (function (id) {
+                    return function () {
+                        selectedCategory = id;
+                        renderCategories();
+                        renderShopItems();
+                    };
+                })(cat.id);
+                root.appendChild(btn);
+            }
+        }
+
+        function getCategoryLabel() {
+            for (var i = 0; i < CATEGORY_RULES.length; i += 1) {
+                if (CATEGORY_RULES[i].id === selectedCategory) return CATEGORY_RULES[i].name;
+            }
+            return 'All';
+        }
+
+        function getSelectedItem() {
+            for (var i = 0; i < shopItems.length; i += 1) {
+                if (Number(shopItems[i].id) === Number(selectedItemId)) return shopItems[i];
+            }
+            return null;
+        }
+
+        function findCurrentEquipForItem(item) {
+            if (!item || !activeCharacter || !activeCharacter.equipment) return null;
+            var eq = activeCharacter.equipment || {};
+            var slot = String(item.slot || '').toLowerCase();
+            var type = String(item.type || '').toLowerCase();
+
+            if (slot === 'head') return { slot: 'head', itemId: Number(eq.head || 0) };
+            if (slot === 'chest') return { slot: 'chest', itemId: Number(eq.chest || 0) };
+            if (slot === 'hands') return { slot: 'hands', itemId: Number(eq.hands || 0) };
+            if (slot === 'legs') return { slot: 'legs', itemId: Number(eq.legs || 0) };
+            if (slot === 'feet') return { slot: 'feet', itemId: Number(eq.feet || 0) };
+            if (slot === 'melee' || type === 'melee') return { slot: 'melee', itemId: Number(eq.melee || 0) };
+            if (slot === 'custom' || type === 'custom') return { slot: 'item1', itemId: Number(eq.item1 || 0) };
+            if (slot === 'range' || type === 'range') return { slot: 'primary', itemId: Number(eq.primary || 0) };
+            return null;
+        }
+
+        function showSelectedItem(itemId) {
+            selectedItemId = Number(itemId || 0);
+            renderShopItems();
+            renderShowcase();
+        }
+
+        function renderShopItems() {
+            var grid = document.getElementById('item-grid');
+            var search = String(document.getElementById('search-input').value || '').trim().toLowerCase();
+            var title = document.getElementById('items-title');
+            title.textContent = 'Items / ' + getCategoryLabel();
+            grid.innerHTML = '';
+
+            var filtered = [];
+            for (var i = 0; i < shopItems.length; i += 1) {
+                var item = shopItems[i];
+                var categoryOk = false;
+                for (var j = 0; j < CATEGORY_RULES.length; j += 1) {
+                    var cat = CATEGORY_RULES[j];
+                    if (cat.id === selectedCategory) {
+                        categoryOk = cat.test(item);
+                        break;
+                    }
+                }
+                if (!categoryOk) continue;
+                if (search) {
+                    var hay = (String(item.name) + ' ' + String(item.desc) + ' ' + String(item.type) + ' ' + String(item.slot)).toLowerCase();
+                    if (hay.indexOf(search) === -1) continue;
+                }
+                filtered.push(item);
+            }
+
+            filtered.sort(function (a, b) {
+                if (a.level !== b.level) return a.level - b.level;
+                return a.price - b.price;
+            });
+
+            if (!filtered.length) {
+                var empty = document.createElement('div');
+                empty.className = 'empty';
+                empty.textContent = 'No items for this filter.';
+                grid.appendChild(empty);
+                return;
+            }
+
+            for (var k = 0; k < filtered.length; k += 1) {
+                var it = filtered[k];
+                var card = document.createElement('div');
+                card.className = 'item-card' + (Number(it.id) === Number(selectedItemId) ? ' selected' : '');
+                card.onclick = (function (id) {
+                    return function () { showSelectedItem(id); };
+                })(it.id);
+
+                var name = document.createElement('div');
+                name.className = 'item-name';
+                name.textContent = it.name;
+
+                var meta = document.createElement('div');
+                meta.className = 'item-meta';
+                meta.textContent = 'ID ' + it.id + ' | ' + String(it.type || '-').toUpperCase() + ' | ' + String(it.slot || '-').toUpperCase();
+
+                var desc = document.createElement('div');
+                desc.className = 'item-desc';
+                desc.textContent = it.desc || 'No description.';
+
+                var price = document.createElement('div');
+                price.className = 'item-price';
+                price.textContent = 'Bounty: ' + it.price + ' | Req Lv: ' + it.level;
+
+                var buy = document.createElement('button');
+                buy.className = 'item-buy';
+                buy.textContent = 'Buy x1';
+                buy.onclick = (function (itemId, itemName) {
+                    return function (ev) {
+                        if (ev && ev.stopPropagation) ev.stopPropagation();
+                        if (!window.buy_item) {
+                            setStatus('Bridge buy_item unavailable.', false);
+                            return;
+                        }
+                        buy_item(itemId, 1);
+                        setStatus('Buying: ' + itemName + '...');
+                    };
+                })(it.id, it.name);
+
+                card.appendChild(name);
+                card.appendChild(meta);
+                card.appendChild(desc);
+                card.appendChild(price);
+                card.appendChild(buy);
+                grid.appendChild(card);
+            }
+        }
+
+        function renderShowcase() {
+            var item = getSelectedItem();
+            var nameEl = document.getElementById('sc-name');
+            var typeEl = document.getElementById('sc-type');
+            var reqEl = document.getElementById('sc-req');
+            var priceEl = document.getElementById('sc-price');
+            var descEl = document.getElementById('sc-desc');
+            var compareEl = document.getElementById('sc-compare');
+            var iconEl = document.getElementById('showcase-icon');
+            var buy1 = document.getElementById('sc-buy-1');
+            var buy5 = document.getElementById('sc-buy-5');
+
+            if (!item) {
+                nameEl.textContent = 'Select an item';
+                typeEl.textContent = 'TYPE: -';
+                reqEl.textContent = 'REQ LV: -';
+                priceEl.textContent = 'PRICE: -';
+                descEl.textContent = 'Click an item card to inspect before buying.';
+                compareEl.textContent = 'Character comparison unavailable.';
+                iconEl.innerHTML = iconSvgForItem(null);
+                buy1.disabled = true;
+                buy5.disabled = true;
+                return;
+            }
+
+            nameEl.textContent = item.name;
+            typeEl.textContent = 'TYPE: ' + String(item.type || '-').toUpperCase() + ' | SLOT: ' + String(item.slot || '-').toUpperCase();
+            reqEl.textContent = 'REQ LV: ' + Number(item.level || 0);
+            priceEl.textContent = 'PRICE: ' + Number(item.price || 0) + ' BOUNTY';
+            descEl.textContent = item.desc || 'No description.';
+            iconEl.innerHTML = iconSvgForItem(item);
+            buy1.disabled = false;
+            buy5.disabled = false;
+
+            var compare = findCurrentEquipForItem(item);
+            if (!compare) {
+                compareEl.textContent = 'No direct slot comparison for this item type.';
+            } else {
+                var currentName = 'EMPTY';
+                if (compare.itemId > 0) {
+                    var meta = zitemById[compare.itemId] || null;
+                    currentName = meta ? resolveText(meta.name, 'ITEM ' + compare.itemId) : ('ITEM ' + compare.itemId);
+                }
+                compareEl.textContent = 'CURRENT ' + String(compare.slot || '').toUpperCase() + ': ' + currentName + '  ->  NEW: ' + item.name;
+            }
+        }
+
+        function buySelected(count) {
+            var item = getSelectedItem();
+            if (!item) {
+                setStatus('Select an item first.', false);
+                return;
+            }
+            if (!window.buy_item) {
+                setStatus('Bridge buy_item unavailable.', false);
+                return;
+            }
+            var safeCount = Number.isFinite(Number(count)) ? Math.max(1, Number(count)) : 1;
+            buy_item(Number(item.id), safeCount);
+            setStatus('Buying: ' + item.name + ' x' + safeCount + '...');
+        }
+
+        function renderInventory() {
+            var list = document.getElementById('inventory-list');
+            list.innerHTML = '';
+            if (!inventoryItems.length) {
+                var empty = document.createElement('div');
+                empty.className = 'empty';
+                empty.textContent = 'Inventory is empty.';
+                list.appendChild(empty);
+                return;
+            }
+
+            for (var i = 0; i < inventoryItems.length; i += 1) {
+                var item = inventoryItems[i];
+                var row = document.createElement('div');
+                row.className = 'inv-row';
+
+                var left = document.createElement('div');
+                var name = document.createElement('div');
+                name.className = 'inv-name';
+                name.textContent = item.name;
+                var meta = document.createElement('div');
+                meta.className = 'inv-meta';
+                meta.textContent = 'ID ' + item.itemId + ' | x' + item.count + ' | ' + String(item.type || '-').toUpperCase();
+                left.appendChild(name);
+                left.appendChild(meta);
+
+                var right = document.createElement('div');
+                right.className = 'inv-actions';
+                var sell = document.createElement('button');
+                sell.textContent = 'Sell x1';
+                sell.disabled = !item.sellable;
+                sell.onclick = (function (instanceId, itemName) {
+                    return function () {
+                        if (!window.sell_item) {
+                            setStatus('Bridge sell_item unavailable.', false);
+                            return;
+                        }
+                        sell_item(instanceId, 1);
+                        setStatus('Selling: ' + itemName + '...');
+                    };
+                })(item.instanceId, item.name);
+                right.appendChild(sell);
+
+                row.appendChild(left);
+                row.appendChild(right);
+                list.appendChild(row);
+            }
+        }
+
+        function refreshShop() {
+            if (!window.list_shop) {
+                setStatus('Bridge list_shop unavailable.', false);
+                return;
+            }
+            list_shop(JSON.stringify({ limit: 200, offset: 0 }));
+        }
+
+        function refreshInventory() {
+            if (!window.list_inventory) {
+                setStatus('Bridge list_inventory unavailable.', false);
+                return;
+            }
+            list_inventory();
+        }
+
+        function onSessionInfo(info) {
+            if (!info) return;
+            sessionInfo = { userId: info.userId || '', username: info.username || '' };
+            document.getElementById('session-state').textContent = 'SESSION: ' + (sessionInfo.username || '-') + ' / ' + (sessionInfo.userId ? 'OK' : 'NO');
+        }
+
+        function onBootstrapV2(data) {
+            if (!data || data.ok === false) {
+                var reason = data && (data.reason || data.message) ? String(data.reason || data.message) : 'bootstrap unavailable';
+                document.getElementById('shop-state').textContent = 'BOOTSTRAP: FAIL (' + reason + ')';
+                return;
+            }
+            bootstrap = data;
+            var contentVersion = String(data.contentVersion || '-');
+            var modeProfiles = data.serverProfile && data.serverProfile.modeProfiles && data.serverProfile.modeProfiles.length
+                ? data.serverProfile.modeProfiles.join(',')
+                : '-';
+            document.getElementById('shop-state').textContent = 'CONTENT ' + contentVersion + ' | PROFILES ' + modeProfiles;
+        }
+
+        function onCharacterList(data) {
+            var rows = data && data.characters && data.characters.length ? data.characters : [];
+            characters = rows.slice(0);
+            var activeId = data && data.activeCharId ? String(data.activeCharId) : '';
+            activeCharacter = null;
+            if (activeId) {
+                for (var i = 0; i < characters.length; i += 1) {
+                    if (String(characters[i].id) === activeId) {
+                        activeCharacter = characters[i];
+                        break;
+                    }
+                }
+            }
+            if (!activeCharacter && characters.length) activeCharacter = characters[0];
+            updateCharChip();
+            applyCharacterPreview();
+            renderShowcase();
+        }
+
+        function onGameDataResult(result) {
+            if (!result || result.error) {
+                if (result && result.error) setStatus('game_data(' + (result.key || '?') + ') error: ' + result.error, false);
+                return;
+            }
+            var key = String(result.key || '').toLowerCase();
+            var wrapped = unwrapRpcData(result.data);
+
+            if (key === 'strings') {
+                var stringsPayload = wrapped && wrapped.data ? wrapped.data : wrapped;
+                var rows = stringsPayload && stringsPayload.strings && stringsPayload.strings.length ? stringsPayload.strings : [];
+                stringsById = {};
+                for (var i = 0; i < rows.length; i += 1) {
+                    var id = rows[i] && rows[i].id ? String(rows[i].id) : '';
+                    if (!id) continue;
+                    stringsById[id] = String(rows[i].text || id);
+                }
+                renderShopItems();
+                renderInventory();
+                renderShowcase();
+                return;
+            }
+
+            if (key === 'zitem') {
+                var zitemPayload = wrapped && wrapped.data ? wrapped.data : wrapped;
+                var items = zitemPayload && zitemPayload.items && zitemPayload.items.length ? zitemPayload.items : [];
+                zitemById = {};
+                for (var j = 0; j < items.length; j += 1) {
+                    var itemId = Number(items[j] && items[j].id);
+                    if (!Number.isFinite(itemId)) continue;
+                    zitemById[itemId] = items[j];
+                }
+                for (var s = 0; s < shopItems.length; s += 1) {
+                    var n1 = normalizeShopItem(shopItems[s]);
+                    if (n1) shopItems[s] = n1;
+                }
+                for (var v = 0; v < inventoryItems.length; v += 1) {
+                    var n2 = normalizeInventoryItem(inventoryItems[v]);
+                    if (n2) inventoryItems[v] = n2;
+                }
+                renderCategories();
+                renderShopItems();
+                renderInventory();
+                renderShowcase();
+            }
+        }
+
+        function onShopListResult(result) {
+            if (!result || !result.success) {
+                setStatus('list_shop failed: ' + (result && result.message ? result.message : 'unknown'), false);
+                return;
+            }
+            var payload = unwrapRpcData(result.data);
+            var rows = payload && payload.items && payload.items.length ? payload.items : [];
+            var next = [];
+            for (var i = 0; i < rows.length; i += 1) {
+                var item = normalizeShopItem(rows[i]);
+                if (item) next.push(item);
+            }
+            shopItems = next;
+            if (!selectedItemId && shopItems.length) selectedItemId = Number(shopItems[0].id);
+            renderCategories();
+            renderShopItems();
+            renderShowcase();
+            setStatus('Shop loaded: ' + shopItems.length + ' items.');
+        }
+
+        function onInventoryResult(result) {
+            if (!result || !result.success) {
+                setStatus('list_inventory failed: ' + (result && result.message ? result.message : 'unknown'), false);
+                return;
+            }
+            var payload = unwrapRpcData(result.data);
+            var rows = payload && payload.items && payload.items.length ? payload.items : [];
+            var next = [];
+            for (var i = 0; i < rows.length; i += 1) {
+                var item = normalizeInventoryItem(rows[i]);
+                if (item) next.push(item);
+            }
+            inventoryItems = next;
+            renderInventory();
+        }
+
+        function onBuyItemResult(result) {
+            if (!result || !result.success) {
+                setStatus('buy_item failed: ' + (result && result.message ? result.message : 'unknown'), false);
+                return;
+            }
+            var payload = unwrapRpcData(result.data) || {};
+            var itemName = payload.item ? String(payload.item) : 'item';
+            var count = Number(payload.count || 1);
+            setStatus('Buy success: ' + itemName + ' x' + count + '.');
+            refreshInventory();
+        }
+
+        function onSellItemResult(result) {
+            if (!result || !result.success) {
+                setStatus('sell_item failed: ' + (result && result.message ? result.message : 'unknown'), false);
+                return;
+            }
+            var payload = unwrapRpcData(result.data) || {};
+            var total = Number(payload.total || 0);
+            setStatus('Sell success: +' + total + ' bounty.');
+            refreshInventory();
+        }
+
+        window.onload = function () {
+            renderCategories();
+            renderShopItems();
+            renderInventory();
+            renderShowcase();
+
+            var searchInput = document.getElementById('search-input');
+            searchInput.addEventListener('input', renderShopItems);
+            searchInput.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') renderShopItems();
+            });
+
+            if (window.set_preview_visible) set_preview_visible(true);
+            if (window.list_characters) list_characters();
+            if (window.fetch_bootstrap_v2) fetch_bootstrap_v2();
+            if (window.fetch_game_data) {
+                fetch_game_data('strings');
+                fetch_game_data('zitem');
+            }
+            refreshShop();
+            refreshInventory();
+            setStatus('Shop ready. Live showcase online.');
+        };
+
+        window.onSessionInfo = onSessionInfo;
+        window.onBootstrapV2 = onBootstrapV2;
+        window.onCharacterList = onCharacterList;
+        window.onGameDataResult = onGameDataResult;
+        window.onShopListResult = onShopListResult;
+        window.onInventoryResult = onInventoryResult;
+        window.onBuyItemResult = onBuyItemResult;
+        window.onSellItemResult = onSellItemResult;
+    </script>
+</body>
+</html>

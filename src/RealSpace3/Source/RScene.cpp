@@ -80,6 +80,100 @@ bool ShouldSkipCharacterPreviewNode(const std::string& nodeName) {
     return false;
 }
 
+std::string ReplaceTextureFilename(const std::string& sourcePath, const char* replacementFilename) {
+    if (!replacementFilename || !*replacementFilename) {
+        return sourcePath;
+    }
+    const size_t slash = sourcePath.find_last_of("/\\");
+    if (slash == std::string::npos) {
+        return std::string(replacementFilename);
+    }
+    return sourcePath.substr(0, slash + 1) + replacementFilename;
+}
+
+void ApplyCreationTextureOverrides(CharacterVisualInstance& visual, int sex, int face, int hair) {
+    if (visual.packages.empty()) {
+        return;
+    }
+
+    auto& basePackage = visual.packages.front();
+    if (basePackage.materials.empty()) {
+        return;
+    }
+
+    static const std::array<const char*, 4> kMaleFaceTextures = {
+        "gz_hum_face0001.bmp.dds",
+        "gz_hum_face0002.bmp.dds",
+        "gz_hum_face0003.bmp.dds",
+        "gz_hum_face0004.bmp.dds"
+    };
+
+    static const std::array<const char*, 5> kMaleHairTextures = {
+        "gz_hum_hair001.tga.dds",
+        "gz_hum_hair002.tga.dds",
+        "gz_hum_hair003.tga.dds",
+        "gz_hum_hair004.tga.dds",
+        "gz_hum_hair008.tga.dds"
+    };
+
+    static const std::array<const char*, 4> kFemaleFaceTextures = {
+        "gz_huw_face001.bmp.dds",
+        "gz_huw_face002.bmp.dds",
+        "gz_huw_face003.bmp.dds",
+        "gz_huw_face004.bmp.dds"
+    };
+
+    static const std::array<const char*, 5> kFemaleHairTextures = {
+        "gz_huw_hair001.tga.dds",
+        "gz_huw_hair002.tga.dds",
+        "gz_huw_hair003.tga.dds",
+        "gz_huw_hair005.tga.dds",
+        "gz_huw_hair006.tga.dds"
+    };
+
+    const bool female = (sex == 1);
+    const int safeFace = std::max(0, std::min(face, static_cast<int>(kMaleFaceTextures.size()) - 1));
+    const int safeHair = std::max(0, std::min(hair, static_cast<int>(kMaleHairTextures.size()) - 1));
+    const char* targetFaceTexture = female ? kFemaleFaceTextures[safeFace] : kMaleFaceTextures[safeFace];
+    const char* targetHairTexture = female ? kFemaleHairTextures[safeHair] : kMaleHairTextures[safeHair];
+    const std::string faceNeedle = female ? "gz_huw_face" : "gz_hum_face";
+    const std::string hairNeedle = female ? "gz_huw_hair" : "gz_hum_hair";
+
+    size_t replacedFace = 0;
+    size_t replacedHair = 0;
+
+    for (auto& material : basePackage.materials) {
+        if (material.baseColorTexture.empty()) {
+            continue;
+        }
+
+        const std::string lowered = ToLowerAscii(material.baseColorTexture);
+        if (lowered.find(faceNeedle) != std::string::npos) {
+            const std::string rewritten = ReplaceTextureFilename(material.baseColorTexture, targetFaceTexture);
+            if (rewritten != material.baseColorTexture) {
+                material.baseColorTexture = rewritten;
+                ++replacedFace;
+            }
+            continue;
+        }
+
+        if (lowered.find(hairNeedle) != std::string::npos) {
+            const std::string rewritten = ReplaceTextureFilename(material.baseColorTexture, targetHairTexture);
+            if (rewritten != material.baseColorTexture) {
+                material.baseColorTexture = rewritten;
+                ++replacedHair;
+            }
+        }
+    }
+
+    AppLogger::Log("[RS3] Creation texture override: model='" + basePackage.modelId +
+        "' sex=" + std::to_string(sex) +
+        " face=" + std::to_string(safeFace) +
+        " hair=" + std::to_string(safeHair) +
+        " replaced(face=" + std::to_string(replacedFace) +
+        ",hair=" + std::to_string(replacedHair) + ").");
+}
+
 bool CompileShader(const char* source,
     const char* entry,
     const char* target,
@@ -1164,9 +1258,7 @@ bool RScene::GetPreferredCamera(DirectX::XMFLOAT3& outPos, DirectX::XMFLOAT3& ou
 }
 
 bool RScene::SetCreationPreview(int sex, int face, int preset, int hair) {
-    (void)face;
     (void)preset;
-    (void)hair;
 
     m_creationSex = sex;
     m_creationFace = face;
@@ -1188,6 +1280,8 @@ bool RScene::SetCreationPreview(int sex, int face, int preset, int hair) {
         AppLogger::Log("[RS3] SetCreationPreview failed for sex=" + std::to_string(sex) + ": " + error);
         return false;
     }
+
+    ApplyCreationTextureOverrides(built, sex, face, hair);
 
     bool clipSet = false;
     static const std::array<const char*, 4> kClipFallback = {

@@ -174,6 +174,26 @@ public:
             return JSValueMakeUndefined(ctx);
         });
 
+        bind("go_lobby", [](JSContextRef ctx, JSObjectRef f, JSObjectRef t, size_t argc, const JSValueRef argv[], JSValueRef* ex) -> JSValueRef {
+            UIManager::getInstance().loadURL(BuildFileUrl("/ui/lobby.html"));
+            return JSValueMakeUndefined(ctx);
+        });
+
+        bind("go_shop", [](JSContextRef ctx, JSObjectRef f, JSObjectRef t, size_t argc, const JSValueRef argv[], JSValueRef* ex) -> JSValueRef {
+            UIManager::getInstance().loadURL(BuildFileUrl("/ui/shop.html"));
+            return JSValueMakeUndefined(ctx);
+        });
+
+        bind("go_equip", [](JSContextRef ctx, JSObjectRef f, JSObjectRef t, size_t argc, const JSValueRef argv[], JSValueRef* ex) -> JSValueRef {
+            UIManager::getInstance().loadURL(BuildFileUrl("/ui/equip.html"));
+            return JSValueMakeUndefined(ctx);
+        });
+
+        bind("go_options", [](JSContextRef ctx, JSObjectRef f, JSObjectRef t, size_t argc, const JSValueRef argv[], JSValueRef* ex) -> JSValueRef {
+            UIManager::getInstance().loadURL(BuildFileUrl("/ui/options.html"));
+            return JSValueMakeUndefined(ctx);
+        });
+
         bind("set_character_preview", [](JSContextRef ctx, JSObjectRef f, JSObjectRef t, size_t argc, const JSValueRef argv[], JSValueRef* ex) -> JSValueRef {
             if (argc < 4) return JSValueMakeBoolean(ctx, false);
             const int sex = static_cast<int>(JSValueToNumber(ctx, argv[0], nullptr));
@@ -244,6 +264,122 @@ public:
                     const std::string msg = JsonEscape(response);
                     SendToUI("onGameDataResult", "{\"key\":\"" + safeKey + "\",\"data\":null,\"error\":\"" + msg + "\"}");
                     SendToUI("onRtProtocolError", "{\"code\":\"GAME_DATA_ERROR\",\"detail\":\"" + msg + "\"}");
+                }
+            });
+            return JSValueMakeUndefined(ctx);
+        });
+
+        bind("list_inventory", [](JSContextRef ctx, JSObjectRef f, JSObjectRef t, size_t argc, const JSValueRef argv[], JSValueRef* ex) -> JSValueRef {
+            Nakama::NakamaManager::getInstance().listInventory([](bool s, const std::string& response) {
+                if (s) {
+                    SendToUI("onInventoryResult", "{\"success\":true,\"data\":" + response + "}");
+                } else {
+                    SendToUI("onInventoryResult", "{\"success\":false,\"message\":\"" + JsonEscape(response) + "\"}");
+                }
+            });
+            return JSValueMakeUndefined(ctx);
+        });
+
+        bind("list_char_inventory", [](JSContextRef ctx, JSObjectRef f, JSObjectRef t, size_t argc, const JSValueRef argv[], JSValueRef* ex) -> JSValueRef {
+            const std::string charId = (argc >= 1) ? JSValueToStdString(ctx, argv[0]) : "";
+            Nakama::NakamaManager::getInstance().listCharInventory(charId, [](bool s, const std::string& response) {
+                if (s) {
+                    SendToUI("onCharInventoryResult", "{\"success\":true,\"data\":" + response + "}");
+                } else {
+                    SendToUI("onCharInventoryResult", "{\"success\":false,\"message\":\"" + JsonEscape(response) + "\"}");
+                }
+            });
+            return JSValueMakeUndefined(ctx);
+        });
+
+        bind("bring_account_item", [](JSContextRef ctx, JSObjectRef f, JSObjectRef t, size_t argc, const JSValueRef argv[], JSValueRef* ex) -> JSValueRef {
+            const std::string charId = (argc >= 1) ? JSValueToStdString(ctx, argv[0]) : "";
+            const std::string instanceId = (argc >= 2) ? JSValueToStdString(ctx, argv[1]) : "";
+            const int count = (argc >= 3) ? static_cast<int>(JSValueToNumber(ctx, argv[2], nullptr)) : 1;
+            Nakama::NakamaManager::getInstance().bringAccountItem(charId, instanceId, count, [](bool s, const std::string& response) {
+                if (s) {
+                    SendToUI("onBringAccountItemResult", "{\"success\":true,\"data\":" + response + "}");
+                } else {
+                    SendToUI("onBringAccountItemResult", "{\"success\":false,\"message\":\"" + JsonEscape(response) + "\"}");
+                }
+            });
+            return JSValueMakeUndefined(ctx);
+        });
+
+        bind("bring_back_account_item", [](JSContextRef ctx, JSObjectRef f, JSObjectRef t, size_t argc, const JSValueRef argv[], JSValueRef* ex) -> JSValueRef {
+            const std::string charId = (argc >= 1) ? JSValueToStdString(ctx, argv[0]) : "";
+            const std::string instanceId = (argc >= 2) ? JSValueToStdString(ctx, argv[1]) : "";
+            const int count = (argc >= 3) ? static_cast<int>(JSValueToNumber(ctx, argv[2], nullptr)) : 1;
+            Nakama::NakamaManager::getInstance().bringBackAccountItem(charId, instanceId, count, [](bool s, const std::string& response) {
+                if (s) {
+                    SendToUI("onBringBackAccountItemResult", "{\"success\":true,\"data\":" + response + "}");
+                } else {
+                    SendToUI("onBringBackAccountItemResult", "{\"success\":false,\"message\":\"" + JsonEscape(response) + "\"}");
+                }
+            });
+            return JSValueMakeUndefined(ctx);
+        });
+
+        bind("equip_item", [](JSContextRef ctx, JSObjectRef f, JSObjectRef t, size_t argc, const JSValueRef argv[], JSValueRef* ex) -> JSValueRef {
+            const std::string charId = (argc >= 1) ? JSValueToStdString(ctx, argv[0]) : "";
+            const std::string instanceId = (argc >= 2) ? JSValueToStdString(ctx, argv[1]) : "";
+            const std::string slot = (argc >= 3) ? JSValueToStdString(ctx, argv[2]) : "";
+            Nakama::NakamaManager::getInstance().equipItem(charId, instanceId, slot, [](bool s, const std::string& response) {
+                if (s) {
+                    SendToUI("onEquipItemResult", "{\"success\":true,\"data\":" + response + "}");
+                } else {
+                    SendToUI("onEquipItemResult", "{\"success\":false,\"message\":\"" + JsonEscape(response) + "\"}");
+                }
+            });
+            return JSValueMakeUndefined(ctx);
+        });
+
+        bind("takeoff_item", [](JSContextRef ctx, JSObjectRef f, JSObjectRef t, size_t argc, const JSValueRef argv[], JSValueRef* ex) -> JSValueRef {
+            const std::string charId = (argc >= 1) ? JSValueToStdString(ctx, argv[0]) : "";
+            const std::string slot = (argc >= 2) ? JSValueToStdString(ctx, argv[1]) : "";
+            Nakama::NakamaManager::getInstance().takeoffItem(charId, slot, [](bool s, const std::string& response) {
+                if (s) {
+                    SendToUI("onTakeoffItemResult", "{\"success\":true,\"data\":" + response + "}");
+                } else {
+                    SendToUI("onTakeoffItemResult", "{\"success\":false,\"message\":\"" + JsonEscape(response) + "\"}");
+                }
+            });
+            return JSValueMakeUndefined(ctx);
+        });
+
+        bind("list_shop", [](JSContextRef ctx, JSObjectRef f, JSObjectRef t, size_t argc, const JSValueRef argv[], JSValueRef* ex) -> JSValueRef {
+            const std::string payload = (argc >= 1) ? JSValueToStdString(ctx, argv[0]) : "{}";
+            Nakama::NakamaManager::getInstance().listShop(payload, [](bool s, const std::string& response) {
+                if (s) {
+                    SendToUI("onShopListResult", "{\"success\":true,\"data\":" + response + "}");
+                } else {
+                    SendToUI("onShopListResult", "{\"success\":false,\"message\":\"" + JsonEscape(response) + "\"}");
+                }
+            });
+            return JSValueMakeUndefined(ctx);
+        });
+
+        bind("buy_item", [](JSContextRef ctx, JSObjectRef f, JSObjectRef t, size_t argc, const JSValueRef argv[], JSValueRef* ex) -> JSValueRef {
+            const int itemId = (argc >= 1) ? static_cast<int>(JSValueToNumber(ctx, argv[0], nullptr)) : 0;
+            const int count = (argc >= 2) ? static_cast<int>(JSValueToNumber(ctx, argv[1], nullptr)) : 1;
+            Nakama::NakamaManager::getInstance().buyItem(itemId, count, [](bool s, const std::string& response) {
+                if (s) {
+                    SendToUI("onBuyItemResult", "{\"success\":true,\"data\":" + response + "}");
+                } else {
+                    SendToUI("onBuyItemResult", "{\"success\":false,\"message\":\"" + JsonEscape(response) + "\"}");
+                }
+            });
+            return JSValueMakeUndefined(ctx);
+        });
+
+        bind("sell_item", [](JSContextRef ctx, JSObjectRef f, JSObjectRef t, size_t argc, const JSValueRef argv[], JSValueRef* ex) -> JSValueRef {
+            const std::string instanceId = (argc >= 1) ? JSValueToStdString(ctx, argv[0]) : "";
+            const int count = (argc >= 2) ? static_cast<int>(JSValueToNumber(ctx, argv[1], nullptr)) : 1;
+            Nakama::NakamaManager::getInstance().sellItem(instanceId, count, [](bool s, const std::string& response) {
+                if (s) {
+                    SendToUI("onSellItemResult", "{\"success\":true,\"data\":" + response + "}");
+                } else {
+                    SendToUI("onSellItemResult", "{\"success\":false,\"message\":\"" + JsonEscape(response) + "\"}");
                 }
             });
             return JSValueMakeUndefined(ctx);

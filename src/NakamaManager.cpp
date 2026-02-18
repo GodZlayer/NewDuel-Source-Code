@@ -229,6 +229,103 @@ void NakamaManager::getGameData(const std::string& key, std::function<void(bool,
     rpcCall("get_game_data", "{\"key\":\"" + escapeJson(key) + "\"}", callback);
 }
 
+void NakamaManager::listInventory(std::function<void(bool, const std::string&)> callback) {
+    rpcCall("list_inventory", "{}", callback);
+}
+
+void NakamaManager::listCharInventory(const std::string& charId, std::function<void(bool, const std::string&)> callback) {
+    if (charId.empty()) {
+        callback(false, "charId vazio");
+        return;
+    }
+    rpcCall("list_char_inventory", "{\"charId\":\"" + escapeJson(charId) + "\"}", callback);
+}
+
+void NakamaManager::bringAccountItem(const std::string& charId, const std::string& instanceId, int count, std::function<void(bool, const std::string&)> callback) {
+    if (charId.empty()) {
+        callback(false, "charId vazio");
+        return;
+    }
+    if (instanceId.empty()) {
+        callback(false, "instanceId vazio");
+        return;
+    }
+    const int safeCount = std::max(1, count);
+    rpcCall("bring_account_item",
+        "{\"charId\":\"" + escapeJson(charId) + "\",\"instanceId\":\"" + escapeJson(instanceId) + "\",\"count\":" + std::to_string(safeCount) + "}",
+        callback);
+}
+
+void NakamaManager::bringBackAccountItem(const std::string& charId, const std::string& instanceId, int count, std::function<void(bool, const std::string&)> callback) {
+    if (charId.empty()) {
+        callback(false, "charId vazio");
+        return;
+    }
+    if (instanceId.empty()) {
+        callback(false, "instanceId vazio");
+        return;
+    }
+    const int safeCount = std::max(1, count);
+    rpcCall("bring_back_account_item",
+        "{\"charId\":\"" + escapeJson(charId) + "\",\"instanceId\":\"" + escapeJson(instanceId) + "\",\"count\":" + std::to_string(safeCount) + "}",
+        callback);
+}
+
+void NakamaManager::equipItem(const std::string& charId, const std::string& instanceId, const std::string& slot, std::function<void(bool, const std::string&)> callback) {
+    if (charId.empty()) {
+        callback(false, "charId vazio");
+        return;
+    }
+    if (instanceId.empty()) {
+        callback(false, "instanceId vazio");
+        return;
+    }
+    if (slot.empty()) {
+        callback(false, "slot vazio");
+        return;
+    }
+    rpcCall("equip_item",
+        "{\"charId\":\"" + escapeJson(charId) + "\",\"instanceId\":\"" + escapeJson(instanceId) + "\",\"slot\":\"" + escapeJson(slot) + "\"}",
+        callback);
+}
+
+void NakamaManager::takeoffItem(const std::string& charId, const std::string& slot, std::function<void(bool, const std::string&)> callback) {
+    if (charId.empty()) {
+        callback(false, "charId vazio");
+        return;
+    }
+    if (slot.empty()) {
+        callback(false, "slot vazio");
+        return;
+    }
+    rpcCall("takeoff_item",
+        "{\"charId\":\"" + escapeJson(charId) + "\",\"slot\":\"" + escapeJson(slot) + "\"}",
+        callback);
+}
+
+void NakamaManager::listShop(const std::string& filterJson, std::function<void(bool, const std::string&)> callback) {
+    const std::string payload = filterJson.empty() ? "{}" : filterJson;
+    rpcCall("list_shop", payload, callback);
+}
+
+void NakamaManager::buyItem(int itemId, int count, std::function<void(bool, const std::string&)> callback) {
+    const int safeCount = std::max(1, count);
+    rpcCall("buy_item",
+        "{\"itemId\":" + std::to_string(itemId) + ",\"count\":" + std::to_string(safeCount) + "}",
+        callback);
+}
+
+void NakamaManager::sellItem(const std::string& instanceId, int count, std::function<void(bool, const std::string&)> callback) {
+    if (instanceId.empty()) {
+        callback(false, "instanceId vazio");
+        return;
+    }
+    const int safeCount = std::max(1, count);
+    rpcCall("sell_item",
+        "{\"instanceId\":\"" + escapeJson(instanceId) + "\",\"count\":" + std::to_string(safeCount) + "}",
+        callback);
+}
+
 void NakamaManager::joinStage(const std::string& matchId, const std::string& password, std::function<void(bool, const std::string&)> callback) {
     if (matchId.empty()) {
         callback(false, "matchId vazio");

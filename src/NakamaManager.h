@@ -30,6 +30,15 @@ namespace Nakama {
         void createStage(const std::string& createJson, std::function<void(bool, const std::string&)> callback);
         void getBootstrapV2(std::function<void(bool, const std::string&)> callback);
         void getGameData(const std::string& key, std::function<void(bool, const std::string&)> callback);
+        void listInventory(std::function<void(bool, const std::string&)> callback);
+        void listCharInventory(const std::string& charId, std::function<void(bool, const std::string&)> callback);
+        void bringAccountItem(const std::string& charId, const std::string& instanceId, int count, std::function<void(bool, const std::string&)> callback);
+        void bringBackAccountItem(const std::string& charId, const std::string& instanceId, int count, std::function<void(bool, const std::string&)> callback);
+        void equipItem(const std::string& charId, const std::string& instanceId, const std::string& slot, std::function<void(bool, const std::string&)> callback);
+        void takeoffItem(const std::string& charId, const std::string& slot, std::function<void(bool, const std::string&)> callback);
+        void listShop(const std::string& filterJson, std::function<void(bool, const std::string&)> callback);
+        void buyItem(int itemId, int count, std::function<void(bool, const std::string&)> callback);
+        void sellItem(const std::string& instanceId, int count, std::function<void(bool, const std::string&)> callback);
         void joinStage(const std::string& matchId, const std::string& password, std::function<void(bool, const std::string&)> callback);
         void leaveStage(std::function<void(bool, const std::string&)> callback);
         void requestStageState(const std::string& matchId, std::function<void(bool, const std::string&)> callback);

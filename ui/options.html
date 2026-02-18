@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html style="background: transparent !important;">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        * { box-sizing: border-box; background: transparent !important; }
+        :root {
+            --bg: rgba(6, 10, 16, 0.86);
+            --line: rgba(0, 163, 255, 0.35);
+            --line-soft: rgba(255, 255, 255, 0.1);
+            --text: #e8f3ff;
+            --text-soft: #9fb4c9;
+            --accent: #00a3ff;
+        }
+        html, body {
+            margin: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: Consolas, "Courier New", monospace;
+            color: var(--text);
+        }
+        .root { width: 100%; height: 100%; display: flex; flex-direction: column; gap: 10px; padding: 12px; }
+        .top-strip {
+            height: 74px;
+            border: 1px solid var(--line);
+            background: var(--bg) !important;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+        }
+        .logo { font-size: 20px; letter-spacing: 4px; color: #fff; text-transform: uppercase; }
+        .top-actions { display: flex; gap: 8px; align-items: center; }
+        .ghost-btn {
+            min-width: 92px;
+            height: 34px;
+            border: 1px solid var(--line-soft);
+            color: var(--text-soft);
+            background: rgba(16, 24, 34, 0.85) !important;
+            font-size: 11px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            cursor: pointer;
+        }
+        .ghost-btn.active {
+            border-color: var(--accent);
+            color: #fff;
+            background: rgba(0, 163, 255, 0.2) !important;
+            cursor: default;
+        }
+        .sub-strip {
+            height: 34px;
+            border: 1px solid var(--line);
+            background: rgba(7, 13, 21, 0.84) !important;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 12px;
+            font-size: 11px;
+            color: var(--text-soft);
+            gap: 10px;
+        }
+        .sub-strip-right { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .main {
+            flex: 1;
+            min-height: 0;
+            border: 1px solid var(--line);
+            background: var(--bg) !important;
+            padding: 12px;
+            overflow: auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+        }
+        .card {
+            border: 1px solid var(--line-soft);
+            background: rgba(0, 0, 0, 0.25) !important;
+            padding: 10px;
+            min-height: 220px;
+        }
+        .card h3 {
+            margin: 0 0 8px 0;
+            font-size: 12px;
+            letter-spacing: 1px;
+            color: #fff;
+            text-transform: uppercase;
+        }
+        .field { margin-bottom: 10px; }
+        .field label {
+            display: block;
+            font-size: 10px;
+            color: var(--text-soft);
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .field select,
+        .field input[type="range"] {
+            width: 100%;
+            height: 30px;
+            border: 1px solid var(--line-soft);
+            background: rgba(0, 0, 0, 0.35) !important;
+            color: #fff;
+            font-family: inherit;
+            font-size: 11px;
+        }
+        .switch-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 11px;
+            color: #d8e9fb;
+            margin: 6px 0;
+        }
+        .kv-list { display: flex; flex-direction: column; gap: 6px; }
+        .kv {
+            border: 1px solid var(--line-soft);
+            background: rgba(8, 14, 22, 0.75) !important;
+            display: grid;
+            grid-template-columns: 120px 1fr;
+            gap: 8px;
+            padding: 6px;
+            font-size: 10px;
+        }
+        .kv .k { color: #95b8d4; text-transform: uppercase; letter-spacing: 1px; }
+        .kv .v { color: #ffffff; overflow-wrap: anywhere; }
+        .bottom-actions {
+            border: 1px solid var(--line-soft);
+            background: rgba(5, 11, 18, 0.84) !important;
+            padding: 10px;
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            align-items: center;
+        }
+        .bottom-left { color: #8fb2cd; font-size: 11px; }
+        .bottom-right { display: flex; gap: 8px; }
+        .btn {
+            min-width: 150px;
+            height: 32px;
+            border: 1px solid var(--line-soft);
+            background: rgba(16, 24, 34, 0.9) !important;
+            color: #dfefff;
+            font-size: 11px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            cursor: pointer;
+        }
+        .btn.primary {
+            border-color: rgba(0, 163, 255, 0.55);
+            color: #fff;
+            background: rgba(0, 163, 255, 0.2) !important;
+        }
+        .status {
+            height: 26px;
+            border: 1px solid var(--line-soft);
+            background: rgba(5, 11, 18, 0.84) !important;
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            font-size: 11px;
+            color: #8db6dc;
+        }
+        @media (max-width: 1300px) {
+            .main { grid-template-columns: 1fr 1fr; }
+        }
+        @media (max-width: 980px) {
+            .main { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="root">
+        <div class="top-strip">
+            <div class="logo">GUNZ OPTIONS</div>
+            <div class="top-actions">
+                <button class="ghost-btn" onclick="navigateTo('shop')">SHOP</button>
+                <button class="ghost-btn" onclick="navigateTo('equip')">EQUIP</button>
+                <button class="ghost-btn" onclick="navigateTo('lobby')">CHANNEL</button>
+                <button class="ghost-btn active" disabled>OPTION</button>
+            </div>
+        </div>
+
+        <div class="sub-strip">
+            <div id="session-state">SESSION: -</div>
+            <div class="sub-strip-right" id="opt-state">OPTIONS ONLINE</div>
+        </div>
+
+        <div class="main">
+            <div class="card">
+                <h3>Video</h3>
+                <div class="field">
+                    <label for="opt-resolution">Resolution</label>
+                    <select id="opt-resolution">
+                        <option>1280x720</option>
+                        <option selected>1600x900</option>
+                        <option>1920x1080</option>
+                        <option>2560x1440</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="opt-quality">Quality</label>
+                    <select id="opt-quality">
+                        <option>Low</option>
+                        <option selected>Medium</option>
+                        <option>High</option>
+                    </select>
+                </div>
+                <div class="switch-row">
+                    <span>VSync</span>
+                    <input id="opt-vsync" type="checkbox" checked />
+                </div>
+                <div class="switch-row">
+                    <span>Show FPS</span>
+                    <input id="opt-fps" type="checkbox" />
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Audio and Input</h3>
+                <div class="field">
+                    <label for="opt-master">Master Volume</label>
+                    <input id="opt-master" type="range" min="0" max="100" value="70" />
+                </div>
+                <div class="field">
+                    <label for="opt-music">Music Volume</label>
+                    <input id="opt-music" type="range" min="0" max="100" value="55" />
+                </div>
+                <div class="field">
+                    <label for="opt-sfx">SFX Volume</label>
+                    <input id="opt-sfx" type="range" min="0" max="100" value="80" />
+                </div>
+                <div class="switch-row">
+                    <span>Raw Input</span>
+                    <input id="opt-raw-input" type="checkbox" checked />
+                </div>
+                <div class="switch-row">
+                    <span>Invert Mouse</span>
+                    <input id="opt-invert" type="checkbox" />
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Server Profile (Bootstrap V2)</h3>
+                <div class="kv-list" id="server-profile"></div>
+            </div>
+        </div>
+
+        <div class="bottom-actions">
+            <div id="local-info" class="bottom-left">Local profile: -</div>
+            <div class="bottom-right">
+                <button class="btn" onclick="goCharSelect()">CHAR SELECT</button>
+                <button class="btn" onclick="refreshServerProfile()">REFRESH SERVER</button>
+                <button class="btn primary" onclick="saveOptions()">SAVE LOCAL</button>
+            </div>
+        </div>
+
+        <div id="status" class="status">Options scene loaded.</div>
+    </div>
+
+    <script>
+        const STORAGE_KEY = 'ogz_options_v1';
+
+        let sessionInfo = { userId: '', username: '' };
+        let bootstrapData = null;
+
+        function setStatus(text, ok) {
+            const el = document.getElementById('status');
+            el.textContent = text;
+            el.style.color = ok === false ? '#ff9f9f' : '#8db6dc';
+        }
+
+        function safeParse(value, fallback) {
+            try {
+                if (typeof value === 'string') return JSON.parse(value);
+                if (value && typeof value === 'object') return value;
+            } catch (_) {}
+            return fallback;
+        }
+
+        function navigateTo(scene) {
+            const key = String(scene || '').toLowerCase();
+            if (key === 'lobby') {
+                if (window.go_lobby) go_lobby();
+                else window.location.href = 'lobby.html';
+                return;
+            }
+            if (key === 'shop') {
+                if (window.go_shop) go_shop();
+                else window.location.href = 'shop.html';
+                return;
+            }
+            if (key === 'equip') {
+                if (window.go_equip) go_equip();
+                else window.location.href = 'equip.html';
+                return;
+            }
+        }
+
+        function goCharSelect() {
+            if (window.go_character_select) go_character_select();
+            else window.location.href = 'character_selection.html';
+        }
+
+        function readOptions() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                return raw ? JSON.parse(raw) : {};
+            } catch (_) {
+                return {};
+            }
+        }
+
+        function applyOptions(opts) {
+            const data = opts || {};
+            if (data.resolution) document.getElementById('opt-resolution').value = data.resolution;
+            if (data.quality) document.getElementById('opt-quality').value = data.quality;
+            if (Number.isFinite(Number(data.master))) document.getElementById('opt-master').value = String(Number(data.master));
+            if (Number.isFinite(Number(data.music))) document.getElementById('opt-music').value = String(Number(data.music));
+            if (Number.isFinite(Number(data.sfx))) document.getElementById('opt-sfx').value = String(Number(data.sfx));
+            if (typeof data.vsync === 'boolean') document.getElementById('opt-vsync').checked = data.vsync;
+            if (typeof data.fps === 'boolean') document.getElementById('opt-fps').checked = data.fps;
+            if (typeof data.rawInput === 'boolean') document.getElementById('opt-raw-input').checked = data.rawInput;
+            if (typeof data.invertMouse === 'boolean') document.getElementById('opt-invert').checked = data.invertMouse;
+        }
+
+        function updateLocalInfo(opts) {
+            const o = opts || readOptions();
+            const resolution = o.resolution || document.getElementById('opt-resolution').value;
+            const quality = o.quality || document.getElementById('opt-quality').value;
+            document.getElementById('local-info').textContent = 'Local profile: ' + resolution + ' / ' + quality;
+        }
+
+        function saveOptions() {
+            const payload = {
+                resolution: document.getElementById('opt-resolution').value,
+                quality: document.getElementById('opt-quality').value,
+                master: Number(document.getElementById('opt-master').value),
+                music: Number(document.getElementById('opt-music').value),
+                sfx: Number(document.getElementById('opt-sfx').value),
+                vsync: !!document.getElementById('opt-vsync').checked,
+                fps: !!document.getElementById('opt-fps').checked,
+                rawInput: !!document.getElementById('opt-raw-input').checked,
+                invertMouse: !!document.getElementById('opt-invert').checked
+            };
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+            updateLocalInfo(payload);
+            setStatus('Options saved locally.');
+        }
+
+        function profileEntry(label, value) {
+            const row = document.createElement('div');
+            row.className = 'kv';
+            const k = document.createElement('div');
+            k.className = 'k';
+            k.textContent = label;
+            const v = document.createElement('div');
+            v.className = 'v';
+            v.textContent = value;
+            row.appendChild(k);
+            row.appendChild(v);
+            return row;
+        }
+
+        function renderServerProfile() {
+            const root = document.getElementById('server-profile');
+            root.innerHTML = '';
+
+            if (!bootstrapData) {
+                root.appendChild(profileEntry('status', 'waiting bootstrap_v2...'));
+                return;
+            }
+
+            const flags = bootstrapData.flags || {};
+            const profile = bootstrapData.serverProfile || {};
+            const maps = bootstrapData.maps && bootstrapData.maps.length ? bootstrapData.maps.length : 0;
+            const gameTypes = bootstrapData.gameTypes && bootstrapData.gameTypes.length ? bootstrapData.gameTypes.length : 0;
+            const modes = profile.modeProfiles && profile.modeProfiles.length ? profile.modeProfiles.join(', ') : '-';
+
+            root.appendChild(profileEntry('contentVersion', String(bootstrapData.contentVersion || '-')));
+            root.appendChild(profileEntry('contentHash', String(bootstrapData.contentHash || '-')));
+            root.appendChild(profileEntry('rtVersion', String(profile.rtVersion || '-')));
+            root.appendChild(profileEntry('tickRate', String(profile.tickRate || '-')));
+            root.appendChild(profileEntry('modeProfiles', modes));
+            root.appendChild(profileEntry('maps', String(maps)));
+            root.appendChild(profileEntry('gameTypes', String(gameTypes)));
+            root.appendChild(profileEntry('enableV2Bootstrap', String(!!flags.enableV2Bootstrap)));
+            root.appendChild(profileEntry('enableMapRecipe', String(!!flags.enableMapRecipe)));
+            root.appendChild(profileEntry('enforceRecipeHash', String(!!flags.enforceRecipeHash)));
+        }
+
+        function refreshServerProfile() {
+            if (!window.fetch_bootstrap_v2) {
+                setStatus('Bridge fetch_bootstrap_v2 unavailable.', false);
+                return;
+            }
+            fetch_bootstrap_v2();
+            setStatus('Refreshing bootstrap_v2...');
+        }
+
+        function onSessionInfo(info) {
+            if (!info) return;
+            sessionInfo = { userId: info.userId || '', username: info.username || '' };
+            document.getElementById('session-state').textContent = 'SESSION: ' + (sessionInfo.username || '-') + ' / ' + (sessionInfo.userId ? 'OK' : 'NO');
+        }
+
+        function onBootstrapV2(data) {
+            const parsed = safeParse(data, data);
+            if (!parsed || parsed.ok === false) {
+                const reason = parsed && (parsed.reason || parsed.message) ? String(parsed.reason || parsed.message) : 'bootstrap unavailable';
+                document.getElementById('opt-state').textContent = 'BOOTSTRAP: FAIL (' + reason + ')';
+                setStatus('Bootstrap failed: ' + reason, false);
+                return;
+            }
+            bootstrapData = parsed;
+            renderServerProfile();
+            document.getElementById('opt-state').textContent = 'CONTENT ' + String(parsed.contentVersion || '-');
+            setStatus('Bootstrap loaded.');
+        }
+
+        window.onload = function () {
+            const saved = readOptions();
+            applyOptions(saved);
+            updateLocalInfo(saved);
+            renderServerProfile();
+            refreshServerProfile();
+            setStatus('Options ready.');
+        };
+
+        window.onSessionInfo = onSessionInfo;
+        window.onBootstrapV2 = onBootstrapV2;
+    </script>
+</body>
+</html>
