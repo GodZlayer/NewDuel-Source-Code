@@ -1,131 +1,95 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OpenGunZ - Selecao de Operador</title>
     <style>
-        * { box-sizing: border-box; }
-
         :root {
-            --bg-0: #020611;
-            --bg-1: #071427;
-            --bg-2: #0a213b;
-            --line: rgba(103, 220, 255, 0.42);
-            --line-soft: rgba(194, 240, 255, 0.16);
-            --text: #ecf9ff;
-            --text-soft: #8eb4cc;
-            --accent: #00c3ff;
-            --accent-2: #5effdc;
-            --danger: #ff657e;
-            --ok: #6effb7;
-            --warn: #ffd07d;
+            --bg-0: #031024;
+            --bg-1: #06253f;
+            --bg-2: #0a3550;
+            --line: rgba(117, 212, 255, 0.32);
+            --line-strong: rgba(129, 229, 255, 0.62);
+            --card: rgba(2, 16, 36, 0.74);
+            --card-2: rgba(5, 22, 44, 0.64);
+            --text: #dff6ff;
+            --muted: #87afc4;
+            --ok: #72ffc0;
+            --warn: #ffd495;
+            --err: #ff8ea2;
+            --primary: #5fe6ff;
+            --accent: #7fd4ff;
+            --danger: #ff5b7f;
+            --radius-lg: 18px;
+            --radius-md: 12px;
+            --radius-sm: 8px;
+            --shadow-soft: 0 18px 45px rgba(0, 0, 0, 0.38);
+            --shadow-glow: 0 0 42px rgba(85, 220, 255, 0.19);
         }
 
-        html, body {
+        * { box-sizing: border-box; }
+
+        html,
+        body {
             width: 100%;
             height: 100%;
             margin: 0;
             overflow: hidden;
+            font-family: "Rajdhani", "Segoe UI", sans-serif;
+            letter-spacing: 0.02em;
+            color: var(--text);
+            background: transparent;
         }
 
-        body {
-            position: relative;
-            font-family: "Bahnschrift", "Segoe UI", "Consolas", monospace;
-            color: var(--text);
-            isolation: isolate;
-            background:
-                radial-gradient(circle at 19% 16%, rgba(0, 180, 255, 0.28), transparent 34%),
-                radial-gradient(circle at 82% 22%, rgba(72, 255, 227, 0.1), transparent 33%),
-                radial-gradient(circle at 56% 84%, rgba(0, 154, 255, 0.13), transparent 42%),
-                linear-gradient(162deg, var(--bg-0), var(--bg-1) 56%, #021020);
+        body::before,
+        body::after {
+            content: "";
+            position: fixed;
+            pointer-events: none;
+            z-index: 0;
         }
 
         body::before {
-            content: "";
-            position: absolute;
-            inset: -30%;
-            pointer-events: none;
-            opacity: 0.94;
-            background:
-                radial-gradient(1px 1px at 12% 18%, rgba(255, 255, 255, 0.82), transparent 50%),
-                radial-gradient(1px 1px at 28% 72%, rgba(136, 228, 255, 0.72), transparent 50%),
-                radial-gradient(1px 1px at 52% 34%, rgba(255, 255, 255, 0.7), transparent 50%),
-                radial-gradient(1px 1px at 76% 62%, rgba(98, 210, 255, 0.66), transparent 50%),
-                radial-gradient(1px 1px at 88% 24%, rgba(171, 233, 255, 0.74), transparent 50%);
-            animation: starsDrift 42s linear infinite;
+            inset: 0;
+            background-image:
+                radial-gradient(circle at center, rgba(156, 229, 255, 0.17) 0 1px, transparent 1px),
+                linear-gradient(0deg, rgba(60, 161, 227, 0.055) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(60, 161, 227, 0.055) 1px, transparent 1px);
+            background-size: 5px 5px, 42px 42px, 42px 42px;
+            opacity: 0.1;
         }
 
         body::after {
-            content: "";
-            position: absolute;
-            inset: -12%;
-            pointer-events: none;
-            opacity: 0.22;
-            transform: perspective(1000px) rotateX(67deg) translateY(24%);
+            inset: -40% -35%;
             background:
-                repeating-linear-gradient(to right, rgba(255, 255, 255, 0.03) 0, rgba(255, 255, 255, 0.03) 1px, transparent 1px, transparent 74px),
-                repeating-linear-gradient(to bottom, rgba(255, 255, 255, 0.024) 0, rgba(255, 255, 255, 0.024) 1px, transparent 1px, transparent 74px);
-            animation: gridDrift 30s linear infinite;
+                conic-gradient(from 70deg at 50% 50%, rgba(96, 208, 255, 0.05), transparent 30%, rgba(96, 208, 255, 0.13), transparent 70%, rgba(96, 208, 255, 0.05));
+            animation: flow-spin 26s linear infinite;
+            opacity: 0.09;
         }
 
-        .flow-depth {
-            position: absolute;
-            inset: -24%;
-            z-index: 0;
-            pointer-events: none;
-            opacity: 0.76;
-            transform-origin: 50% 100%;
-            transform: perspective(1400px) rotateX(73deg) translateY(36%) scale(1.22);
-            background:
-                radial-gradient(128% 76% at 50% 116%, rgba(0, 159, 247, 0.56), transparent 64%),
-                conic-gradient(from 170deg at 50% 84%, rgba(0, 199, 255, 0.28), rgba(97, 255, 232, 0.14), rgba(0, 176, 255, 0.24), rgba(0, 199, 255, 0.28));
-            filter: blur(20px) saturate(1.08);
-            animation: flowPerspective 18s ease-in-out infinite alternate;
-        }
-
-        .flow-depth::before {
-            content: "";
-            position: absolute;
-            inset: -14%;
-            background:
-                linear-gradient(98deg, transparent 10%, rgba(143, 232, 255, 0.12) 35%, transparent 56%),
-                linear-gradient(118deg, transparent 26%, rgba(96, 255, 224, 0.1) 52%, transparent 78%);
-            filter: blur(16px);
-            animation: flowSweep 9.8s ease-in-out infinite;
+        @keyframes flow-spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
         }
 
         .shell {
             position: relative;
             z-index: 1;
-            width: min(96vw, 1240px);
-            height: min(92vh, 760px);
-            margin: 3vh auto;
+            width: min(1600px, 100vw);
+            height: 100vh;
+            margin: 0 auto;
             display: grid;
             grid-template-rows: auto 1fr auto;
-            gap: 16px;
-            animation: riseIn 860ms cubic-bezier(0.2, 0.88, 0.2, 1);
+            gap: 14px;
+            padding: 20px 24px 16px;
         }
 
         .topbar {
-            position: relative;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 12px;
-            border: 1px solid var(--line);
-            background:
-                linear-gradient(150deg, rgba(8, 21, 38, 0.96), rgba(6, 12, 24, 0.92)),
-                linear-gradient(90deg, rgba(0, 197, 255, 0.09), transparent 46%);
-            box-shadow: 0 16px 36px rgba(0, 0, 0, 0.44), 0 0 28px rgba(0, 195, 255, 0.12);
-            padding: 12px 18px;
-            overflow: hidden;
-        }
-
-        .topbar::after {
-            content: "";
-            position: absolute;
-            inset: 8px;
-            border: 1px solid var(--line-soft);
-            pointer-events: none;
+            gap: 14px;
         }
 
         .brand {
@@ -135,555 +99,1292 @@
         }
 
         .brand-mark {
-            width: 44px;
-            height: 44px;
-            border-radius: 11px;
-            border: 1px solid rgba(121, 221, 255, 0.55);
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            border: 1px solid rgba(110, 215, 255, 0.6);
+            background: linear-gradient(160deg, rgba(16, 85, 124, 0.6), rgba(3, 20, 42, 0.86));
+            box-shadow: inset 0 0 20px rgba(100, 212, 255, 0.14), 0 0 26px rgba(78, 202, 255, 0.2);
             display: grid;
             place-items: center;
-            background: linear-gradient(160deg, rgba(11, 30, 52, 0.9), rgba(9, 16, 30, 0.74));
-            box-shadow: inset 0 0 18px rgba(0, 191, 255, 0.2), 0 0 18px rgba(0, 191, 255, 0.12);
         }
 
         .brand-mark svg {
             width: 22px;
             height: 22px;
-            stroke: #9ee8ff;
-            stroke-width: 1.8;
+            stroke: #a5eeff;
             fill: none;
-            filter: drop-shadow(0 0 6px rgba(0, 193, 255, 0.5));
+            stroke-width: 1.7;
         }
 
         .brand-title {
-            font-size: clamp(24px, 3.1vw, 34px);
-            letter-spacing: 2px;
-            line-height: 1;
-            font-weight: 700;
+            font-size: clamp(44px, 4.2vw, 88px);
+            line-height: 0.86;
+            font-weight: 800;
+            letter-spacing: 0.13em;
             text-transform: uppercase;
-            color: #f5fcff;
-            text-shadow: 0 0 18px rgba(0, 195, 255, 0.34);
+            text-shadow: 0 0 40px rgba(111, 227, 255, 0.2);
         }
 
         .brand-sub {
-            margin-top: 3px;
-            font-size: 11px;
-            letter-spacing: 4px;
+            margin-top: 5px;
+            color: #7ad2ff;
+            font-size: 13px;
+            letter-spacing: 0.45em;
             text-transform: uppercase;
-            color: #7fd9ff;
-            opacity: 0.9;
         }
 
-        .account-status {
+        .account-chip {
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            font-size: 11px;
-            letter-spacing: 1.5px;
-            text-transform: uppercase;
-            color: #97e6ff;
             padding: 8px 12px;
-            border: 1px solid rgba(130, 226, 255, 0.35);
-            background: rgba(2, 12, 26, 0.75);
+            border-radius: 999px;
+            border: 1px solid rgba(118, 223, 159, 0.45);
+            background: rgba(7, 38, 44, 0.6);
+            color: #8dfdc2;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            white-space: nowrap;
         }
 
-        .account-status i {
+        .account-dot {
             width: 9px;
             height: 9px;
-            border-radius: 50%;
-            background: var(--ok);
-            box-shadow: 0 0 10px rgba(110, 255, 183, 0.75);
-            animation: pulseDot 1.8s ease-in-out infinite;
+            border-radius: 999px;
+            background: #72ffc0;
+            box-shadow: 0 0 16px rgba(114, 255, 192, 0.9);
         }
 
         .layout {
-            display: grid;
-            grid-template-columns: minmax(320px, 0.95fr) minmax(360px, 1.1fr);
-            gap: 16px;
             min-height: 0;
-        }
-
-        .panel {
-            position: relative;
-            border: 1px solid var(--line);
-            background:
-                linear-gradient(152deg, rgba(7, 19, 34, 0.95), rgba(5, 12, 24, 0.9)),
-                linear-gradient(92deg, rgba(0, 199, 255, 0.08), transparent 45%);
-            box-shadow: 0 18px 42px rgba(0, 0, 0, 0.48), 0 0 32px rgba(0, 196, 255, 0.12);
-            overflow: hidden;
-        }
-
-        .panel::before {
-            content: "";
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(118deg, transparent 0%, rgba(255, 255, 255, 0.08) 48%, transparent 70%);
-            transform: translateX(-120%);
-            animation: sweep 9s ease-in-out infinite;
-            pointer-events: none;
-        }
-
-        .panel::after {
-            content: "";
-            position: absolute;
-            inset: 10px;
-            border: 1px solid var(--line-soft);
-            pointer-events: none;
-        }
-
-        .panel-head {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 14px 16px 8px;
-            gap: 8px;
-            text-transform: uppercase;
-            letter-spacing: 1.2px;
-            font-size: 11px;
-            color: #9adfff;
-        }
-
-        .slot-count {
-            color: #d8f6ff;
-            font-weight: 700;
-        }
-
-        .char-list {
-            position: relative;
-            z-index: 1;
-            height: calc(100% - 46px);
-            padding: 6px 12px 14px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            overflow: auto;
-        }
-
-        .char-list::-webkit-scrollbar { width: 8px; }
-        .char-list::-webkit-scrollbar-track { background: rgba(6, 18, 33, 0.6); }
-        .char-list::-webkit-scrollbar-thumb {
-            background: linear-gradient(180deg, rgba(0, 196, 255, 0.58), rgba(88, 255, 230, 0.72));
-            border-radius: 999px;
-        }
-
-        .char-slot {
-            border: 1px solid rgba(125, 220, 255, 0.24);
-            background: linear-gradient(145deg, rgba(6, 15, 28, 0.9), rgba(6, 12, 22, 0.86));
-            min-height: 78px;
-            padding: 11px 12px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease, background 180ms ease;
-        }
-
-        .char-slot:hover {
-            transform: translateY(-1px);
-            border-color: rgba(139, 228, 255, 0.5);
-            box-shadow: 0 8px 18px rgba(0, 184, 255, 0.18);
-        }
-
-        .char-slot.active {
-            border-color: rgba(94, 224, 255, 0.9);
-            background:
-                linear-gradient(145deg, rgba(10, 35, 60, 0.88), rgba(8, 21, 39, 0.88)),
-                linear-gradient(90deg, rgba(0, 197, 255, 0.17), transparent 50%);
-            box-shadow: inset 0 0 20px rgba(0, 194, 255, 0.16), 0 0 24px rgba(0, 195, 255, 0.2);
-        }
-
-        .slot-icon {
-            flex: 0 0 42px;
-            width: 42px;
-            height: 42px;
-            border-radius: 11px;
-            border: 1px solid rgba(125, 220, 255, 0.38);
             display: grid;
-            place-items: center;
-            background: rgba(4, 15, 27, 0.86);
+            grid-template-columns: minmax(220px, 0.9fr) minmax(520px, 1.6fr) minmax(280px, 1fr);
+            gap: 16px;
+            align-items: stretch;
         }
 
-        .slot-icon svg {
+        .card {
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--line);
+            background: linear-gradient(170deg, rgba(7, 30, 58, 0.72), rgba(2, 14, 32, 0.56));
+            box-shadow: var(--shadow-soft), inset 0 0 26px rgba(67, 176, 255, 0.11);
+            backdrop-filter: blur(3px);
+        }
+
+        .overview {
+            display: grid;
+            grid-template-rows: auto 1fr;
+            gap: 12px;
+            padding: 14px;
+        }
+
+        .overview-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .overview-name {
+            font-size: 30px;
+            font-weight: 800;
+            letter-spacing: 0.07em;
+            text-transform: uppercase;
+        }
+
+        .overview-level {
+            font-size: 13px;
+            font-weight: 700;
+            color: #8cccf1;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+        }
+
+        .overview-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 6px;
+        }
+
+        .meta-pill {
+            padding: 5px 8px;
+            border-radius: 999px;
+            border: 1px solid rgba(130, 208, 252, 0.35);
+            background: rgba(8, 34, 62, 0.63);
+            color: #9fd9fb;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .loadout-visual {
+            margin-top: 12px;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 8px;
+        }
+
+        .gear-chip {
+            min-height: 44px;
+            border-radius: var(--radius-sm);
+            border: 1px solid rgba(126, 210, 255, 0.35);
+            background: linear-gradient(165deg, rgba(11, 46, 79, 0.56), rgba(4, 19, 39, 0.7));
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px;
+        }
+
+        .gear-icon {
             width: 22px;
             height: 22px;
-            stroke: #9ee6ff;
-            stroke-width: 1.7;
+            border-radius: 7px;
+            border: 1px solid rgba(121, 209, 255, 0.42);
+            display: grid;
+            place-items: center;
+            color: #8ddfff;
+            background: rgba(20, 63, 98, 0.45);
+            flex: 0 0 auto;
+        }
+
+        .gear-icon svg {
+            width: 13px;
+            height: 13px;
+            stroke: currentColor;
             fill: none;
+            stroke-width: 1.8;
+            stroke-linecap: round;
+            stroke-linejoin: round;
         }
 
-        .slot-main {
-            flex: 1;
-            min-width: 0;
-        }
-
-        .slot-name {
-            font-size: 14px;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            color: #f0fbff;
+        .gear-text {
+            font-size: 12px;
             font-weight: 700;
+            letter-spacing: 0.08em;
+            color: #c7efff;
+            text-transform: uppercase;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
 
+        .stage-wrap {
+            position: relative;
+            min-height: 0;
+            padding: 6px;
+            display: grid;
+            grid-template-rows: minmax(0, 1fr) auto;
+            gap: 12px;
+        }
+
+        .stage-frame {
+            position: relative;
+            min-height: 0;
+            border-radius: 28px;
+            border: 1px solid rgba(124, 216, 255, 0.34);
+            background:
+                radial-gradient(44% 22% at 50% 92%, rgba(125, 220, 255, 0.13), transparent 72%),
+                radial-gradient(68% 68% at 50% 50%, rgba(28, 99, 149, 0.1), transparent 80%),
+                rgba(3, 15, 34, 0.06);
+            box-shadow: inset 0 0 38px rgba(65, 190, 255, 0.08), 0 0 40px rgba(44, 153, 223, 0.1);
+            overflow: hidden;
+        }
+
+        .stage-frame::before,
+        .stage-frame::after {
+            content: "";
+            position: absolute;
+            pointer-events: none;
+            border-radius: 50%;
+        }
+
+        .stage-frame::before {
+            width: min(56vh, 62vw);
+            height: min(56vh, 62vw);
+            left: 50%;
+            bottom: -18%;
+            transform: translateX(-50%);
+            border: 1px solid rgba(121, 214, 255, 0.56);
+            box-shadow: 0 0 34px rgba(93, 211, 255, 0.32), inset 0 0 24px rgba(88, 207, 255, 0.21);
+            animation: ring-pulse 2.8s ease-in-out infinite;
+        }
+
+        .stage-frame::after {
+            width: min(74vh, 80vw);
+            height: min(74vh, 80vw);
+            left: 50%;
+            bottom: -32%;
+            transform: translateX(-50%);
+            border: 1px dashed rgba(117, 206, 255, 0.24);
+            animation: ring-spin 34s linear infinite;
+        }
+
+        @keyframes ring-pulse {
+            0%, 100% { opacity: 0.6; transform: translateX(-50%) scale(0.98); }
+            50% { opacity: 1; transform: translateX(-50%) scale(1.02); }
+        }
+
+        @keyframes ring-spin {
+            from { transform: translateX(-50%) rotate(0deg); }
+            to { transform: translateX(-50%) rotate(360deg); }
+        }
+
+        .stage-interaction {
+            position: absolute;
+            inset: 0;
+            z-index: 4;
+            cursor: grab;
+            touch-action: none;
+        }
+
+        .stage-interaction.dragging {
+            cursor: grabbing;
+        }
+
+        .stage-badges {
+            position: absolute;
+            top: 14px;
+            left: 14px;
+            right: 14px;
+            z-index: 5;
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            pointer-events: none;
+        }
+
+        .stage-badge {
+            padding: 6px 10px;
+            border-radius: 999px;
+            border: 1px solid rgba(125, 220, 255, 0.36);
+            background: rgba(5, 27, 50, 0.62);
+            color: #9edfff;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        .stage-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .chip-btn,
+        .action-btn,
+        .slot-btn,
+        .wizard-btn {
+            border: 1px solid rgba(116, 209, 255, 0.43);
+            background: linear-gradient(165deg, rgba(13, 65, 103, 0.52), rgba(4, 20, 43, 0.84));
+            color: #c9f2ff;
+            border-radius: 999px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: transform .18s ease, border-color .2s ease, box-shadow .2s ease, opacity .2s ease;
+        }
+
+        .chip-btn:hover,
+        .action-btn:hover,
+        .slot-btn:hover,
+        .wizard-btn:hover {
+            transform: translateY(-1px);
+            border-color: var(--line-strong);
+            box-shadow: 0 0 18px rgba(99, 218, 255, 0.2);
+        }
+
+        .chip-btn {
+            padding: 8px 13px;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+
+        .chip-btn.active {
+            border-color: rgba(143, 241, 196, 0.7);
+            color: #97ffd2;
+            box-shadow: 0 0 20px rgba(100, 233, 172, 0.22);
+        }
+
+        .chip-btn.warn {
+            border-color: rgba(255, 108, 137, 0.52);
+            color: #ffc0cf;
+        }
+
+        .slots-panel {
+            padding: 12px;
+            display: grid;
+            grid-template-rows: auto minmax(0, 1fr);
+            gap: 10px;
+        }
+
+        .panel-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: #97d6f9;
+        }
+
+        .slot-list {
+            min-height: 0;
+            overflow: auto;
+            padding-right: 2px;
+            display: grid;
+            gap: 8px;
+            align-content: start;
+        }
+
+        .slot-item {
+            border-radius: var(--radius-md);
+            border: 1px solid rgba(115, 210, 255, 0.31);
+            background: linear-gradient(168deg, rgba(10, 44, 77, 0.56), rgba(4, 19, 39, 0.8));
+            min-height: 82px;
+            padding: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease;
+        }
+
+        .slot-item:hover {
+            border-color: rgba(131, 225, 255, 0.66);
+            box-shadow: 0 0 18px rgba(97, 201, 255, 0.2);
+            transform: translateY(-1px);
+        }
+
+        .slot-item.active {
+            border-color: rgba(137, 236, 255, 0.84);
+            box-shadow: inset 0 0 30px rgba(88, 201, 255, 0.18), 0 0 20px rgba(88, 201, 255, 0.24);
+        }
+
+        .slot-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: 11px;
+            border: 1px solid rgba(124, 216, 255, 0.42);
+            display: grid;
+            place-items: center;
+            color: #94e0ff;
+            background: rgba(14, 58, 91, 0.45);
+            flex: 0 0 auto;
+        }
+
+        .slot-icon svg {
+            width: 17px;
+            height: 17px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 1.8;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .slot-name {
+            font-size: 34px;
+            font-weight: 800;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            line-height: 1;
+        }
+
         .slot-meta {
             margin-top: 3px;
-            font-size: 11px;
-            color: var(--text-soft);
-            letter-spacing: 1px;
+            font-size: 12px;
+            font-weight: 700;
+            color: #86c6e8;
+            letter-spacing: 0.13em;
             text-transform: uppercase;
         }
 
         .slot-empty {
-            color: #87b8d4;
-            font-size: 11px;
-            letter-spacing: 1.2px;
-            text-transform: uppercase;
-        }
-
-        .info-wrap {
-            position: relative;
-            z-index: 1;
-            height: 100%;
-            display: grid;
-            grid-template-rows: auto 1fr;
-            gap: 0;
-        }
-
-        .info-head {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 14px 16px 8px;
-            text-transform: uppercase;
-            letter-spacing: 1.2px;
-            font-size: 11px;
-            color: #9adfff;
-        }
-
-        .info-body {
-            padding: 0 16px 16px;
-            display: grid;
-            grid-template-rows: auto auto 1fr;
-            gap: 10px;
-        }
-
-        .note {
-            border: 1px solid rgba(128, 220, 255, 0.25);
-            background: rgba(4, 14, 27, 0.74);
-            padding: 10px 11px;
-            font-size: 11px;
-            color: #9bc0d7;
-            line-height: 1.4;
-        }
-
-        .status {
-            border: 1px solid rgba(128, 220, 255, 0.28);
-            background: rgba(3, 14, 24, 0.84);
-            padding: 10px 12px;
-            min-height: 44px;
-            font-size: 12px;
-            color: #7ecfff;
-            letter-spacing: 0.2px;
-            text-transform: uppercase;
-            display: flex;
-            align-items: center;
-        }
-
-        .status.err { color: #ff8f9f; border-color: rgba(255, 116, 145, 0.44); }
-        .status.ok { color: #8cffca; border-color: rgba(122, 255, 196, 0.48); }
-        .status.warn { color: #ffd58f; border-color: rgba(255, 210, 132, 0.45); }
-
-        .preset-panel {
-            border: 1px solid rgba(129, 220, 255, 0.24);
-            background: rgba(2, 11, 23, 0.76);
-            padding: 10px 12px;
-            overflow: auto;
-        }
-
-        .preset-panel h4 {
-            margin: 0 0 9px;
-            font-size: 11px;
-            letter-spacing: 1.6px;
-            text-transform: uppercase;
-            color: #8fd5f7;
-        }
-
-        .preset-list {
-            display: flex;
-            flex-direction: column;
-            gap: 7px;
-        }
-
-        .preset-row {
-            display: flex;
-            justify-content: space-between;
-            gap: 8px;
-            border: 1px solid rgba(126, 220, 255, 0.2);
-            background: rgba(6, 17, 32, 0.76);
-            padding: 7px 8px;
-            font-size: 11px;
-            line-height: 1.3;
-        }
-
-        .preset-row .slot {
-            color: #8bb2c9;
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-            white-space: nowrap;
-        }
-
-        .preset-row .item {
-            color: #ddf6ff;
-            text-align: right;
-            word-break: break-word;
+            color: #98cae6;
+            opacity: 0.82;
         }
 
         .actions {
             display: flex;
-            justify-content: flex-end;
-            gap: 12px;
+            gap: 10px;
+            justify-content: space-between;
+            align-items: center;
         }
 
-        button {
-            border: 1px solid rgba(117, 220, 255, 0.56);
-            background:
-                linear-gradient(150deg, rgba(0, 192, 255, 0.42), rgba(0, 192, 255, 0.18) 60%, rgba(75, 255, 228, 0.22)),
-                linear-gradient(90deg, rgba(255, 255, 255, 0.14), transparent 36%);
-            color: #effbff;
-            padding: 14px 26px;
-            min-height: 46px;
-            font-family: inherit;
-            font-size: 12px;
-            letter-spacing: 2.4px;
+        .action-left,
+        .action-right {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .action-btn {
+            min-width: 180px;
+            padding: 11px 16px;
+            border-radius: var(--radius-md);
+            font-size: 15px;
+            font-weight: 700;
+            letter-spacing: 0.16em;
             text-transform: uppercase;
-            cursor: pointer;
-            transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease, opacity 180ms ease;
-            position: relative;
-            overflow: hidden;
         }
 
-        button::before {
-            content: "";
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(110deg, transparent 0%, rgba(255, 255, 255, 0.45) 50%, transparent 63%);
-            transform: translateX(-135%);
-            transition: transform 450ms ease;
+        .action-btn.primary {
+            border-color: rgba(127, 226, 255, 0.62);
+            background: linear-gradient(130deg, rgba(14, 71, 110, 0.65), rgba(6, 32, 61, 0.88));
+            box-shadow: inset 0 0 30px rgba(92, 210, 255, 0.14);
         }
 
-        button:hover::before { transform: translateX(130%); }
-        button:hover {
-            transform: translateY(-1px);
-            border-color: rgba(131, 230, 255, 0.9);
-            box-shadow: 0 12px 28px rgba(0, 197, 255, 0.3);
+        .action-btn.ghost {
+            min-width: 150px;
         }
 
-        button:disabled {
-            opacity: 0.42;
-            cursor: default;
+        .action-btn.danger {
+            border-color: rgba(255, 107, 135, 0.56);
+            color: #ffd1db;
+            background: linear-gradient(130deg, rgba(82, 18, 38, 0.64), rgba(38, 8, 23, 0.84));
+        }
+
+        .action-btn:disabled,
+        .wizard-btn:disabled,
+        .chip-btn:disabled,
+        .slot-btn:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
             transform: none;
             box-shadow: none;
         }
 
-        button:disabled::before { display: none; }
-
-        .btn-danger {
-            border-color: rgba(255, 127, 151, 0.62);
-            background:
-                linear-gradient(145deg, rgba(255, 70, 105, 0.36), rgba(182, 39, 68, 0.24)),
-                linear-gradient(90deg, rgba(255, 255, 255, 0.14), transparent 40%);
+        .status-toast {
+            position: fixed;
+            left: 50%;
+            top: 12px;
+            transform: translate(-50%, -22px);
+            min-width: min(86vw, 720px);
+            max-width: min(86vw, 720px);
+            padding: 9px 14px;
+            border-radius: 999px;
+            border: 1px solid rgba(127, 214, 255, 0.52);
+            background: rgba(5, 28, 50, 0.9);
+            color: #bfe9ff;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            text-align: center;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity .2s ease, transform .22s ease;
+            z-index: 40;
         }
 
-        .modal-backdrop {
+        .status-toast.show {
+            opacity: 1;
+            transform: translate(-50%, 0);
+        }
+
+        .status-toast.ok { border-color: rgba(109, 241, 178, 0.6); color: #b8ffd9; }
+        .status-toast.warn { border-color: rgba(255, 214, 144, 0.62); color: #ffe3ba; }
+        .status-toast.err { border-color: rgba(255, 130, 157, 0.64); color: #ffc2d1; }
+
+        .wizard-overlay {
+            position: fixed;
+            inset: 0;
+            display: none;
+            justify-content: flex-start;
+            align-items: center;
+            background: linear-gradient(90deg, rgba(1, 11, 24, 0.75) 0%, rgba(1, 9, 20, 0.56) 35%, rgba(1, 9, 20, 0.22) 68%, transparent 100%);
+            z-index: 25;
+            pointer-events: none;
+        }
+
+        .wizard-overlay.open {
+            display: flex;
+            pointer-events: auto;
+        }
+
+        .wizard {
+            width: min(480px, calc(100vw - 18px));
+            max-height: calc(100vh - 32px);
+            margin-left: 18px;
+            border-radius: 22px;
+            border: 1px solid rgba(128, 220, 255, 0.5);
+            background: linear-gradient(165deg, rgba(7, 29, 57, 0.92), rgba(2, 12, 30, 0.95));
+            box-shadow: 0 30px 70px rgba(0, 0, 0, 0.48), 0 0 50px rgba(65, 192, 255, 0.18);
+            overflow: hidden;
+            display: grid;
+            grid-template-rows: auto auto minmax(0, 1fr) auto;
+        }
+
+        .wizard-head {
+            padding: 12px 14px 8px;
+            border-bottom: 1px solid rgba(109, 197, 244, 0.28);
+            background: linear-gradient(180deg, rgba(11, 58, 91, 0.35), rgba(5, 22, 42, 0.12));
+        }
+
+        .wizard-kicker {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.24em;
+            color: #7dd7ff;
+            text-transform: uppercase;
+        }
+
+        .wizard-title {
+            margin-top: 3px;
+            font-size: 26px;
+            font-weight: 800;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+
+        .wizard-step-label {
+            margin-top: 3px;
+            color: #a0d8f5;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+
+        .wizard-progress {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+            padding: 10px 14px;
+        }
+
+        .progress-dot {
+            height: 6px;
+            border-radius: 999px;
+            border: 1px solid rgba(123, 214, 255, 0.3);
+            background: rgba(6, 25, 47, 0.8);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .progress-dot.active,
+        .progress-dot.done {
+            border-color: rgba(132, 227, 255, 0.72);
+        }
+
+        .progress-dot.active::after,
+        .progress-dot.done::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, rgba(90, 210, 255, 0.2), rgba(130, 239, 255, 0.95));
+        }
+
+        .wizard-body {
+            min-height: 0;
+            overflow: auto;
+            padding: 10px 14px 14px;
+            display: grid;
+            align-content: start;
+            gap: 10px;
+        }
+
+        .wizard-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+        }
+
+        .choice-card,
+        .preset-card {
+            border: 1px solid rgba(118, 207, 255, 0.34);
+            border-radius: 13px;
+            background: linear-gradient(170deg, rgba(11, 50, 86, 0.48), rgba(5, 22, 43, 0.84));
+            padding: 12px;
+            cursor: pointer;
+            transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease;
+        }
+
+        .choice-card:hover,
+        .preset-card:hover {
+            border-color: rgba(143, 230, 255, 0.8);
+            box-shadow: 0 0 20px rgba(99, 205, 255, 0.24);
+            transform: translateY(-1px);
+        }
+
+        .choice-card.active,
+        .preset-card.active {
+            border-color: rgba(144, 243, 255, 0.9);
+            box-shadow: inset 0 0 26px rgba(99, 213, 255, 0.21), 0 0 18px rgba(99, 213, 255, 0.26);
+        }
+
+        .choice-title,
+        .preset-title {
+            font-size: 18px;
+            font-weight: 800;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+
+        .choice-sub,
+        .preset-sub {
+            margin-top: 5px;
+            font-size: 12px;
+            color: #94cde9;
+            letter-spacing: 0.11em;
+            text-transform: uppercase;
+        }
+
+        .carousel {
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .carousel-track {
+            min-height: 0;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 8px;
+        }
+
+        .slot-btn {
+            width: 34px;
+            height: 34px;
+            border-radius: 999px;
+            display: grid;
+            place-items: center;
+            font-size: 18px;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .preset-icons {
+            margin-top: 10px;
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 6px;
+        }
+
+        .preset-icon {
+            min-height: 40px;
+            border-radius: 8px;
+            border: 1px solid rgba(124, 214, 255, 0.34);
+            background: rgba(8, 33, 59, 0.72);
+            padding: 6px;
+            display: grid;
+            align-content: center;
+            justify-items: center;
+            gap: 4px;
+        }
+
+        .preset-icon svg {
+            width: 13px;
+            height: 13px;
+            stroke: #93dcff;
+            fill: none;
+            stroke-width: 1.8;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .preset-icon span {
+            font-size: 10px;
+            color: #a4d8f2;
+            letter-spacing: 0.07em;
+            text-transform: uppercase;
+        }
+
+        .name-field {
+            display: grid;
+            gap: 6px;
+        }
+
+        .name-field label {
+            color: #8fd0f2;
+            font-size: 11px;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+
+        .name-field input {
+            width: 100%;
+            height: 44px;
+            border-radius: 10px;
+            border: 1px solid rgba(127, 219, 255, 0.46);
+            background: rgba(4, 20, 39, 0.85);
+            color: #d9f6ff;
+            padding: 0 12px;
+            font-size: 17px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            outline: none;
+        }
+
+        .name-field input:focus {
+            border-color: rgba(145, 236, 255, 0.88);
+            box-shadow: 0 0 18px rgba(116, 223, 255, 0.26);
+        }
+
+        .summary-row {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 8px;
+        }
+
+        .summary-chip {
+            min-height: 42px;
+            border-radius: 10px;
+            border: 1px solid rgba(126, 214, 255, 0.34);
+            background: rgba(7, 30, 53, 0.72);
+            padding: 7px 9px;
+            display: grid;
+            gap: 3px;
+        }
+
+        .summary-chip b {
+            font-size: 11px;
+            color: #93cce8;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+
+        .summary-chip span {
+            font-size: 15px;
+            color: #d5f5ff;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            font-weight: 800;
+        }
+
+        .wizard-foot {
+            border-top: 1px solid rgba(110, 197, 243, 0.28);
+            padding: 12px 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            background: linear-gradient(180deg, rgba(4, 16, 34, 0), rgba(3, 14, 29, 0.72));
+        }
+
+        .wizard-btn {
+            border-radius: 10px;
+            min-width: 108px;
+            height: 40px;
+            padding: 0 14px;
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+        }
+
+        .wizard-btn.primary {
+            border-color: rgba(132, 225, 255, 0.8);
+            background: linear-gradient(150deg, rgba(20, 90, 132, 0.68), rgba(8, 35, 68, 0.9));
+            color: #dbf7ff;
+        }
+
+        .wizard-btn.cancel {
+            border-color: rgba(255, 145, 165, 0.56);
+            color: #ffc9d6;
+            background: linear-gradient(150deg, rgba(69, 18, 35, 0.64), rgba(34, 8, 20, 0.88));
+        }
+
+        .dialog-backdrop {
             position: fixed;
             inset: 0;
             display: none;
             align-items: center;
             justify-content: center;
-            background: rgba(1, 7, 15, 0.56);
-            backdrop-filter: blur(3px);
-            z-index: 10;
+            background: rgba(1, 7, 17, 0.72);
+            z-index: 35;
         }
 
-        .modal-backdrop.open { display: flex; }
+        .dialog-backdrop.open { display: flex; }
 
-        .modal {
-            width: min(92vw, 470px);
-            border: 1px solid var(--line);
-            background:
-                linear-gradient(152deg, rgba(7, 20, 36, 0.98), rgba(5, 11, 23, 0.94)),
-                linear-gradient(92deg, rgba(0, 198, 255, 0.08), transparent 45%);
-            box-shadow: 0 24px 48px rgba(0, 0, 0, 0.58), 0 0 36px rgba(0, 197, 255, 0.14);
-            position: relative;
-            overflow: hidden;
-            padding: 16px;
-            animation: popIn 220ms ease-out;
-        }
-
-        .modal::after {
-            content: "";
-            position: absolute;
-            inset: 10px;
-            border: 1px solid var(--line-soft);
-            pointer-events: none;
-        }
-
-        .modal h3 {
-            margin: 0 0 12px;
-            font-size: 13px;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            color: #dff8ff;
-            position: relative;
-            z-index: 1;
-        }
-
-        .field {
-            margin-bottom: 10px;
-            position: relative;
-            z-index: 1;
-        }
-
-        .field label {
-            display: block;
-            margin-bottom: 5px;
-            font-size: 10px;
-            text-transform: uppercase;
-            letter-spacing: 1.3px;
-            color: #90b7d0;
-        }
-
-        .field input,
-        .field select {
-            width: 100%;
-            border: 1px solid rgba(130, 222, 255, 0.32);
-            background: rgba(2, 12, 24, 0.84);
-            color: #eff9ff;
-            min-height: 39px;
-            padding: 8px 10px;
-            outline: none;
-            font-family: inherit;
-            font-size: 13px;
-        }
-
-        .field input:focus,
-        .field select:focus {
-            border-color: rgba(129, 226, 255, 0.76);
-            box-shadow: 0 0 0 1px rgba(129, 226, 255, 0.24), 0 0 10px rgba(0, 199, 255, 0.12);
-        }
-
-        .modal-note {
-            font-size: 11px;
-            color: #a6cbe2;
-            margin-bottom: 8px;
-            position: relative;
-            z-index: 1;
-            line-height: 1.4;
-        }
-
-        .modal-note b { color: #e8fbff; }
-
-        .modal-actions {
-            position: relative;
-            z-index: 1;
-            margin-top: 12px;
-            display: flex;
-            justify-content: flex-end;
+        .dialog {
+            width: min(420px, calc(100vw - 24px));
+            border-radius: 16px;
+            border: 1px solid rgba(131, 222, 255, 0.46);
+            background: linear-gradient(170deg, rgba(8, 31, 58, 0.93), rgba(3, 13, 30, 0.95));
+            box-shadow: 0 20px 55px rgba(0, 0, 0, 0.48);
+            padding: 14px;
+            display: grid;
             gap: 10px;
         }
 
-        .btn-secondary {
-            border-color: rgba(123, 165, 190, 0.45);
-            background: linear-gradient(145deg, rgba(50, 68, 83, 0.78), rgba(33, 44, 58, 0.84));
-        }
-
-        .mini-hint {
-            margin-top: 6px;
-            font-size: 10px;
-            color: #88acc4;
-            letter-spacing: 0.4px;
+        .dialog-title {
+            font-size: 20px;
+            font-weight: 800;
+            letter-spacing: 0.08em;
             text-transform: uppercase;
         }
 
-        @keyframes starsDrift {
-            from { transform: translate3d(0, 0, 0); }
-            to { transform: translate3d(-160px, -220px, 0); }
+        .dialog-note {
+            color: #9ccce6;
+            font-size: 12px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            font-weight: 700;
         }
 
-        @keyframes gridDrift {
-            from { transform: perspective(1000px) rotateX(67deg) translateY(24%) translateX(0); }
-            to { transform: perspective(1000px) rotateX(67deg) translateY(24%) translateX(-110px); }
+        .dialog input {
+            width: 100%;
+            height: 42px;
+            border-radius: 10px;
+            border: 1px solid rgba(125, 210, 255, 0.4);
+            background: rgba(4, 17, 35, 0.85);
+            color: #e2f8ff;
+            font-size: 16px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            padding: 0 10px;
+            outline: none;
         }
 
-        @keyframes flowPerspective {
-            from {
-                transform: perspective(1400px) rotateX(73deg) translateY(34%) scale(1.18);
-                filter: blur(18px) saturate(1.04);
+        .dialog-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+
+        .dialog-actions .wizard-btn {
+            min-width: 100px;
+        }
+
+        .shell {
+            width: min(1360px, 96vw);
+            grid-template-rows: auto 1fr auto auto;
+            gap: 14px;
+            padding: 26px 18px 20px;
+        }
+
+        .topbar {
+            justify-content: center;
+            min-height: 84px;
+        }
+
+        .brand-mark {
+            display: none;
+        }
+
+        .brand {
+            gap: 0;
+        }
+
+        .brand-title {
+            font-size: clamp(72px, 6vw, 112px);
+            letter-spacing: 0.1em;
+            line-height: 0.88;
+            text-align: center;
+        }
+
+        .brand-sub {
+            text-align: center;
+            letter-spacing: 0.5em;
+            font-size: 11px;
+            opacity: 0.9;
+        }
+
+        .layout {
+            grid-template-columns: minmax(330px, 1fr) minmax(380px, 1.06fr) minmax(330px, 1fr);
+            gap: 18px;
+        }
+
+        .card {
+            border-radius: 2px;
+            border: 1px solid rgba(113, 202, 255, 0.38);
+            background: linear-gradient(170deg, rgba(5, 26, 53, 0.78), rgba(2, 13, 30, 0.66));
+            box-shadow: inset 0 0 24px rgba(60, 177, 255, 0.07), 0 0 35px rgba(42, 149, 220, 0.08);
+            backdrop-filter: blur(1px);
+        }
+
+        .panel-kicker {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #8dbddb;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        .overview {
+            padding: 12px;
+            gap: 4px;
+        }
+
+        .overview-head {
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .overview-name {
+            font-size: 52px;
+            letter-spacing: 0.04em;
+            margin-bottom: 2px;
+        }
+
+        .overview-level {
+            color: #c6eaff;
+            letter-spacing: 0.18em;
+        }
+
+        .overview-meta {
+            margin: 0 0 10px;
+            gap: 6px;
+        }
+
+        .meta-pill {
+            border-radius: 2px;
+            padding: 4px 7px;
+            font-size: 10px;
+            background: rgba(10, 39, 70, 0.75);
+            border: 1px solid rgba(107, 189, 238, 0.36);
+        }
+
+        .loadout-visual {
+            margin-top: 0;
+            grid-template-columns: 1fr;
+            gap: 8px;
+        }
+
+        .stat-block {
+            display: grid;
+            gap: 5px;
+        }
+
+        .stat-row {
+            display: grid;
+            gap: 5px;
+        }
+
+        .stat-label {
+            font-size: 10px;
+            color: #a9d5ee;
+            font-weight: 700;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+        }
+
+        .stat-track {
+            height: 34px;
+            border: 1px solid rgba(118, 201, 252, 0.45);
+            background: rgba(10, 35, 61, 0.72);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            padding-left: 12px;
+        }
+
+        .stat-fill {
+            position: absolute;
+            inset: 1px;
+            width: 0;
+            transition: width .18s ease;
+        }
+
+        .stat-fill.hp {
+            background: linear-gradient(90deg, rgba(136, 18, 45, 0.95), rgba(190, 39, 73, 0.9));
+        }
+
+        .stat-fill.ap {
+            background: linear-gradient(90deg, rgba(32, 79, 110, 0.95), rgba(58, 114, 148, 0.9));
+        }
+
+        .stat-value {
+            position: relative;
+            z-index: 2;
+            font-size: 15px;
+            letter-spacing: 0.13em;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .weapon-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 8px;
+        }
+
+        .weapon-card {
+            border: 1px solid rgba(109, 192, 241, 0.34);
+            background: rgba(8, 29, 54, 0.66);
+            min-height: 72px;
+            display: grid;
+            align-content: center;
+            gap: 4px;
+            padding: 8px;
+        }
+
+        .weapon-icon {
+            height: 26px;
+            display: grid;
+            place-items: center;
+            color: #95d9ff;
+        }
+
+        .weapon-icon svg {
+            width: 46px;
+            height: 18px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 1.8;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .weapon-name {
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: #d4f2ff;
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .stage-wrap {
+            padding: 0;
+            gap: 0;
+            grid-template-rows: 1fr;
+        }
+
+        .stage-frame {
+            border-radius: 2px;
+            min-height: 622px;
+            border: 1px solid rgba(108, 195, 245, 0.34);
+            background:
+                radial-gradient(42% 20% at 50% 92%, rgba(118, 215, 255, 0.1), transparent 74%),
+                radial-gradient(72% 74% at 50% 45%, rgba(20, 74, 123, 0.1), transparent 84%),
+                rgba(1, 14, 35, 0.05);
+        }
+
+        .stage-frame::before {
+            width: min(52vh, 48vw);
+            height: min(52vh, 48vw);
+            bottom: -8%;
+            border-color: rgba(115, 202, 249, 0.42);
+            box-shadow: 0 0 18px rgba(77, 196, 255, 0.24), inset 0 0 10px rgba(73, 193, 255, 0.18);
+        }
+
+        .stage-frame::after {
+            width: min(68vh, 62vw);
+            height: min(68vh, 62vw);
+            bottom: -18%;
+            border-color: rgba(108, 190, 239, 0.18);
+        }
+
+        .stage-badges {
+            justify-content: center;
+            bottom: 10px;
+            top: auto;
+            left: 10px;
+            right: 10px;
+        }
+
+        .stage-badge:first-child {
+            display: none;
+        }
+
+        .stage-badge {
+            border-radius: 0;
+            background: transparent;
+            border-color: rgba(116, 205, 255, 0.24);
+            color: #9ed9f8;
+            letter-spacing: 0.18em;
+            padding: 3px 10px;
+        }
+
+        .stage-controls {
+            display: none;
+        }
+
+        .slots-panel {
+            padding: 10px;
+            gap: 8px;
+        }
+
+        .panel-head {
+            border: 1px solid rgba(115, 199, 248, 0.45);
+            padding: 5px 10px;
+            background: rgba(4, 36, 62, 0.64);
+            border-radius: 1px;
+            font-size: 11px;
+            letter-spacing: 0.18em;
+        }
+
+        .slot-list {
+            gap: 10px;
+        }
+
+        .slot-item {
+            min-height: 124px;
+            border-radius: 2px;
+            padding: 12px;
+            position: relative;
+            align-items: flex-start;
+        }
+
+        .slot-item.active {
+            box-shadow: inset 0 0 20px rgba(87, 200, 255, 0.16), 0 0 16px rgba(83, 198, 255, 0.2);
+        }
+
+        .slot-name {
+            font-size: 20px;
+            line-height: 1;
+            letter-spacing: 0.08em;
+        }
+
+        .slot-meta {
+            margin-top: 8px;
+            font-size: 12px;
+            letter-spacing: 0.12em;
+            color: #7fc0e4;
+        }
+
+        .slot-empty {
+            font-size: 14px;
+        }
+
+        .actions {
+            justify-content: center;
+            gap: 10px;
+            margin-top: 2px;
+        }
+
+        .action-btn {
+            min-width: 210px;
+            border-radius: 1px;
+            padding: 13px 16px 12px;
+            font-size: 15px;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            min-height: 52px;
+        }
+
+        .action-btn.primary {
+            background: linear-gradient(110deg, rgba(20, 85, 128, 0.8), rgba(8, 44, 74, 0.75));
+        }
+
+        .action-btn.danger {
+            background: linear-gradient(110deg, rgba(55, 20, 44, 0.62), rgba(20, 13, 33, 0.78));
+        }
+
+        .action-btn.ghost {
+            background: linear-gradient(110deg, rgba(12, 41, 74, 0.68), rgba(6, 24, 48, 0.82));
+        }
+
+        .hidden-create {
+            display: none !important;
+        }
+
+        .footer-sign {
+            text-align: center;
+            color: #63a8d4;
+            letter-spacing: 0.2em;
+            font-size: 10px;
+            text-transform: uppercase;
+            opacity: 0.82;
+        }
+
+        body.wizard-open .slots-panel {
+            opacity: 0.72;
+        }
+
+        @media (max-width: 1320px) {
+            .layout {
+                grid-template-columns: minmax(200px, .9fr) minmax(420px, 1.35fr) minmax(250px, .95fr);
+                gap: 12px;
             }
-            to {
-                transform: perspective(1400px) rotateX(73deg) translateY(41%) scale(1.28);
-                filter: blur(24px) saturate(1.12);
+
+            .brand-title {
+                font-size: clamp(34px, 3.6vw, 62px);
             }
         }
 
-        @keyframes flowSweep {
-            0%, 100% { transform: translateX(-5%) skewX(-8deg); }
-            50% { transform: translateX(6%) skewX(7deg); }
-        }
+        @media (max-width: 1080px) {
+            body,
+            html {
+                overflow: auto;
+            }
 
-        @keyframes sweep {
-            0%, 74% { transform: translateX(-120%); }
-            100% { transform: translateX(125%); }
-        }
-
-        @keyframes riseIn {
-            from { opacity: 0; transform: translateY(12px) scale(0.992); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
-        }
-
-        @keyframes popIn {
-            from { opacity: 0; transform: translateY(8px) scale(0.985); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
-        }
-
-        @keyframes pulseDot {
-            0%, 100% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.22); opacity: 0.78; }
-        }
-
-        @media (max-width: 1060px) {
             .shell {
-                width: min(97vw, 980px);
-                height: min(94vh, 900px);
+                width: 100%;
+                min-height: 100vh;
+                height: auto;
+                overflow: visible;
+                padding: 14px;
             }
 
             .layout {
                 grid-template-columns: 1fr;
-                grid-template-rows: minmax(260px, 1fr) minmax(240px, 0.95fr);
+            }
+
+            .overview {
+                order: 2;
+            }
+
+            .stage-wrap {
+                order: 1;
+                min-height: 58vh;
+            }
+
+            .slots-panel {
+                order: 3;
+                min-height: 340px;
             }
 
             .actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .action-left,
+            .action-right {
+                width: 100%;
                 justify-content: stretch;
             }
 
-            .actions button {
+            .action-btn {
                 flex: 1;
+                min-width: 0;
+            }
+
+            .wizard {
+                width: calc(100vw - 12px);
+                margin: 6px;
+                max-height: calc(100vh - 12px);
             }
         }
     </style>
 </head>
 <body>
-    <div class="flow-depth" aria-hidden="true"></div>
+    <div id="status-toast" class="status-toast">Pronto.</div>
 
     <div class="shell">
         <header class="topbar">
             <div class="brand">
                 <div class="brand-mark" aria-hidden="true">
                     <svg viewBox="0 0 24 24">
-                        <path d="M4 15 12 4l8 11"></path>
-                        <path d="M7 13h10"></path>
-                        <path d="M9 17h6"></path>
+                        <path d="M6 12 12 5l6 7"></path>
+                        <path d="M8 12h8"></path>
+                        <path d="M10 16h4"></path>
                     </svg>
                 </div>
                 <div>
@@ -691,91 +1392,89 @@
                     <div class="brand-sub">Selecao de Operador NDG</div>
                 </div>
             </div>
-            <div class="account-status" id="account-status"><i></i><span>Estado: Conectado</span></div>
         </header>
 
         <main class="layout">
-            <section class="panel">
-                <div class="panel-head">
-                    <span>Slots de Personagem</span>
-                    <span id="slot-count" class="slot-count">0/4</span>
+            <section class="card overview" id="overview-panel">
+                <div class="panel-kicker">
+                    <span id="overview-kicker-name">OPERADOR</span>
+                    <span>PAINEL DO OPERADOR</span>
                 </div>
-                <div class="char-list" id="slots"></div>
+                <div>
+                    <div class="overview-head">
+                        <div class="overview-name" id="overview-name">Slot Vazio</div>
+                        <div class="overview-level" id="overview-level">LV 1</div>
+                    </div>
+                    <div class="overview-meta" id="overview-meta"></div>
+                </div>
+                <div>
+                    <div class="loadout-visual" id="overview-loadout"></div>
+                </div>
             </section>
 
-            <section class="panel">
-                <div class="info-wrap">
-                    <div class="info-head">
-                        <span>Criacao e Validacao</span>
-                        <span id="active-name">Sem selecao</span>
+            <section class="stage-wrap">
+                <div class="stage-frame">
+                    <div class="stage-badges">
+                        <span class="stage-badge">RS3 LIVE</span>
+                        <span class="stage-badge" id="stage-mode">Preview</span>
                     </div>
-                    <div class="info-body">
-                        <div class="note">Preview em tempo real com <b>sexo/rosto/cabelo</b>. Presets exibidos somente quando o catalogo local comprova todos os itens.</div>
-                        <div id="status" class="status">Selecione um personagem ou clique em um slot vazio para criar.</div>
-                        <div class="preset-panel">
-                            <h4>Loadout do Preset</h4>
-                            <div id="preset-detail" class="preset-list"></div>
-                        </div>
-                    </div>
+                    <div id="stage-interaction" class="stage-interaction" aria-label="Controle do personagem"></div>
+                </div>
+                <div class="stage-controls">
+                    <button id="btn-orbit" class="chip-btn active" type="button">Orbita Auto</button>
+                    <button id="btn-cam-reset" class="chip-btn" type="button">Reset Cam</button>
+                    <button id="btn-view-front" class="chip-btn" type="button">Frente</button>
+                    <button id="btn-view-side" class="chip-btn" type="button">Perfil</button>
+                    <button id="btn-view-back" class="chip-btn" type="button">Costas</button>
                 </div>
             </section>
+
+            <aside class="card slots-panel" id="slot-panel">
+                <div class="panel-head">
+                    <span>Slots de Personagem</span>
+                    <span id="slot-count">0/4</span>
+                </div>
+                <div class="slot-list" id="slots"></div>
+            </aside>
         </main>
 
         <footer class="actions">
-            <button id="btn-delete" class="btn-danger" onclick="openDeleteModal()" style="display:none;">Deletar Personagem</button>
-            <button id="btn-enter" onclick="handleSelectCharacter()" disabled>Acessar Area de Combate</button>
+            <button id="btn-enter" class="action-btn primary" type="button" disabled>Conectar</button>
+            <button id="btn-delete" class="action-btn danger" type="button">Deletar</button>
+            <button id="btn-logout" class="action-btn ghost" type="button">Logout</button>
+            <button id="btn-create" class="action-btn ghost hidden-create" type="button">Criar Personagem</button>
         </footer>
+        <div class="footer-sign">impacto_5987311_001</div>
     </div>
 
-    <div id="create-modal-backdrop" class="modal-backdrop" onclick="if(event.target===this) closeCreateModal()">
-        <div class="modal" role="dialog" aria-modal="true" aria-label="Criar personagem">
-            <h3>Criar Personagem</h3>
-
-            <div class="field">
-                <label for="char-name">Nome</label>
-                <input id="char-name" maxlength="16" placeholder="Digite o nome" />
-            </div>
-
-            <div class="field">
-                <label for="char-sex">Sexo</label>
-                <select id="char-sex"></select>
-            </div>
-
-            <div class="field">
-                <label for="char-face">Rosto</label>
-                <select id="char-face"></select>
-            </div>
-
-            <div class="field">
-                <label for="char-hair">Cabelo</label>
-                <select id="char-hair"></select>
-            </div>
-
-            <div class="field">
-                <label for="char-preset">Preset Inicial</label>
-                <select id="char-preset"></select>
-                <div class="mini-hint" id="preset-quick-summary">-</div>
-            </div>
-
-            <div class="modal-actions">
-                <button class="btn-secondary" onclick="closeCreateModal()">Cancelar</button>
-                <button id="btn-create-confirm" onclick="handleCreateCharacter()">Criar</button>
-            </div>
-        </div>
+    <div id="wizard-overlay" class="wizard-overlay">
+        <section class="wizard" role="dialog" aria-modal="true" aria-label="Criador de personagem">
+            <header class="wizard-head">
+                <div class="wizard-kicker">Criador MMO</div>
+                <div id="wizard-title" class="wizard-title">Etapa</div>
+                <div id="wizard-step-label" class="wizard-step-label">1/5</div>
+            </header>
+            <div id="wizard-progress" class="wizard-progress"></div>
+            <div id="wizard-body" class="wizard-body"></div>
+            <footer class="wizard-foot">
+                <button id="wizard-cancel" class="wizard-btn cancel" type="button">Cancelar</button>
+                <div style="display:flex; gap:8px;">
+                    <button id="wizard-back" class="wizard-btn" type="button">Voltar</button>
+                    <button id="wizard-next" class="wizard-btn primary" type="button">Proximo</button>
+                </div>
+            </footer>
+        </section>
     </div>
 
-    <div id="delete-modal-backdrop" class="modal-backdrop" onclick="if(event.target===this) closeDeleteModal()">
-        <div class="modal" role="dialog" aria-modal="true" aria-label="Deletar personagem">
-            <h3>Confirmar Exclusao</h3>
-            <div class="modal-note">Digite o nome do personagem para confirmar:</div>
-            <div class="modal-note"><b id="delete-char-name">-</b></div>
-            <div class="field">
-                <label for="delete-confirm-input">Confirmacao</label>
-                <input id="delete-confirm-input" maxlength="16" placeholder="Digite o nome exato" />
-            </div>
-            <div class="modal-actions">
-                <button class="btn-secondary" onclick="closeDeleteModal()">Cancelar</button>
-                <button id="btn-delete-confirm" class="btn-danger" onclick="handleDeleteCharacter()">Deletar</button>
+    <div id="delete-modal" class="dialog-backdrop" onclick="if(event.target===this) closeDeleteModal()">
+        <div class="dialog">
+            <div class="dialog-title">Confirmar Exclusao</div>
+            <div class="dialog-note">Digite o nome para confirmar</div>
+            <div class="dialog-note" id="delete-char-name">-</div>
+            <input id="delete-confirm-input" maxlength="16" placeholder="NOME EXATO" />
+            <div class="dialog-actions">
+                <button id="btn-delete-cancel" class="wizard-btn" type="button">Cancelar</button>
+                <button id="btn-delete-confirm" class="wizard-btn cancel" type="button">Deletar</button>
             </div>
         </div>
     </div>
@@ -791,55 +1490,31 @@
         };
 
         const PRESET_CATALOG = [
-            {
-                id: 0,
-                name: 'Assalto Balanceado',
-                equipment: { melee: 1, primary: 5001, secondary: 4001, item1: 30301, item2: 0, chest: 21001, hands: 0, legs: 23001, feet: 0 }
-            },
-            {
-                id: 1,
-                name: 'Close Range',
-                equipment: { melee: 2, primary: 5002, secondary: 0, item1: 30301, item2: 0, chest: 21001, hands: 0, legs: 23001, feet: 0 }
-            },
-            {
-                id: 2,
-                name: 'Tatico',
-                equipment: { melee: 1, primary: 4005, secondary: 5001, item1: 30401, item2: 0, chest: 21001, hands: 0, legs: 23001, feet: 0 }
-            },
-            {
-                id: 3,
-                name: 'Precisao',
-                equipment: { melee: 2, primary: 4001, secondary: 0, item1: 30401, item2: 0, chest: 21001, hands: 0, legs: 23001, feet: 0 }
-            },
-            {
-                id: 4,
-                name: 'Utilitario',
-                equipment: { melee: 2, primary: 4002, secondary: 0, item1: 30401, item2: 30001, chest: 21001, hands: 0, legs: 23001, feet: 0 }
-            },
-            {
-                id: 5,
-                name: 'Suporte',
-                equipment: { melee: 1, primary: 4006, secondary: 0, item1: 30101, item2: 30001, chest: 21001, hands: 0, legs: 23001, feet: 0 }
-            }
+            { id: 0, name: 'Assalto', equipment: { melee: 1, primary: 5001, secondary: 4001, item1: 30301, item2: 0, chest: 21001, hands: 0, legs: 23001, feet: 0 } },
+            { id: 1, name: 'Close', equipment: { melee: 2, primary: 5002, secondary: 0, item1: 30301, item2: 0, chest: 21001, hands: 0, legs: 23001, feet: 0 } },
+            { id: 2, name: 'Tatico', equipment: { melee: 1, primary: 4005, secondary: 5001, item1: 30401, item2: 0, chest: 21001, hands: 0, legs: 23001, feet: 0 } },
+            { id: 3, name: 'Precisao', equipment: { melee: 2, primary: 4001, secondary: 0, item1: 30401, item2: 0, chest: 21001, hands: 0, legs: 23001, feet: 0 } },
+            { id: 4, name: 'Utilitario', equipment: { melee: 2, primary: 4002, secondary: 0, item1: 30401, item2: 30001, chest: 21001, hands: 0, legs: 23001, feet: 0 } },
+            { id: 5, name: 'Suporte', equipment: { melee: 1, primary: 4006, secondary: 0, item1: 30101, item2: 30001, chest: 21001, hands: 0, legs: 23001, feet: 0 } }
         ];
 
         const ITEM_CATALOG = {
-            1: { name: 'Dagger01', modelId: 'weapon/dagger01' },
-            2: { name: 'Katana01', modelId: 'weapon/katana01' },
-            4001: { name: 'Pistol01', modelId: 'weapon/pistol01' },
-            4002: { name: 'Pistol01x2', modelId: 'weapon/pistol01x2' },
-            4005: { name: 'Pistol07', modelId: 'weapon/pistol07' },
-            4006: { name: 'Pistol07x2', modelId: 'weapon/pistol07x2' },
-            5001: { name: 'SMG01', modelId: 'weapon/smg01' },
-            5002: { name: 'SMG01x2', modelId: 'weapon/smg01x2' },
-            30001: { name: 'MediKit', modelId: 'weapon/medikit' },
-            30101: { name: 'RepairKit', modelId: 'weapon/repairkit' },
-            30301: { name: 'Grenade01', modelId: 'weapon/grenade01' },
-            30401: { name: 'Smoke01', modelId: 'weapon/smoke01' },
-            21001: { name: 'Chest M', modelId: 'parts/eq_chest_12' },
-            21501: { name: 'Chest W', modelId: 'parts/eq_chest_05' },
-            23001: { name: 'Legs M', modelId: 'parts/eq_legs_01' },
-            23501: { name: 'Legs W', modelId: 'parts/eq_legs_g002' }
+            1: { name: 'Dagger01' },
+            2: { name: 'Katana01' },
+            4001: { name: 'Pistol01' },
+            4002: { name: 'Pistol01x2' },
+            4005: { name: 'Pistol07' },
+            4006: { name: 'Pistol07x2' },
+            5001: { name: 'SMG01' },
+            5002: { name: 'SMG01x2' },
+            30001: { name: 'MediKit' },
+            30101: { name: 'RepairKit' },
+            30301: { name: 'Grenade01' },
+            30401: { name: 'Smoke01' },
+            21001: { name: 'Chest M' },
+            21501: { name: 'Chest W' },
+            23001: { name: 'Legs M' },
+            23501: { name: 'Legs W' }
         };
 
         const SLOT_ORDER = ['melee', 'primary', 'secondary', 'item1', 'item2', 'chest', 'hands', 'legs', 'feet'];
@@ -855,13 +1530,46 @@
             feet: 'Botas'
         };
 
+        const WIZARD_STEPS = [
+            { key: 'sex', title: 'Sexo', subtitle: 'Etapa 1 de 5', camera: { yaw: 0, pitch: 8, distance: 430, focus: 90, autoOrbit: false } },
+            { key: 'hair', title: 'Cabelo', subtitle: 'Etapa 2 de 5', camera: { yaw: 6, pitch: 7, distance: 255, focus: 138, autoOrbit: false } },
+            { key: 'face', title: 'Rosto', subtitle: 'Etapa 3 de 5', camera: { yaw: 0, pitch: 5, distance: 215, focus: 148, autoOrbit: false } },
+            { key: 'preset', title: 'Itens', subtitle: 'Etapa 4 de 5', camera: { yaw: -10, pitch: 10, distance: 334, focus: 104, autoOrbit: false } },
+            { key: 'confirm', title: 'Confirmar', subtitle: 'Etapa 5 de 5', camera: { yaw: 8, pitch: 12, distance: 392, focus: 98, autoOrbit: true } }
+        ];
+
+        let characterCreateConfig = { ...PROVEN_PROFILE };
+        let characters = [];
+        let selectedId = null;
+        let selectedName = '';
+        let cachedActiveCharId = null;
+        let hasAutoOpenedCreateFlow = false;
+        let initialCharacterListRequested = false;
+
+        let previewRetryToken = 0;
+        let cameraAutoOrbit = true;
+        let characterYawDeg = 0;
+        let toastTimer = null;
+
+        const wizard = {
+            isOpen: false,
+            step: 0,
+            busy: false,
+            slotIndex: -1,
+            draft: { sex: 0, hair: 0, face: 0, preset: 0, name: '' }
+        };
+
+        function numOr(v, d) {
+            const n = Number(v);
+            return Number.isFinite(n) ? n : d;
+        }
+
         function uniqueNumeric(values) {
-            const out = [];
             const seen = new Set();
-            (Array.isArray(values) ? values : []).forEach((raw) => {
-                const n = Number(raw);
-                if (!Number.isFinite(n)) return;
-                if (seen.has(n)) return;
+            const out = [];
+            (Array.isArray(values) ? values : []).forEach((v) => {
+                const n = Number(v);
+                if (!Number.isInteger(n) || seen.has(n)) return;
                 seen.add(n);
                 out.push(n);
             });
@@ -869,76 +1577,67 @@
         }
 
         function mergeWithProven(values, provenValues) {
-            const merged = uniqueNumeric([...(Array.isArray(values) ? values : []), ...provenValues]);
-            return merged.filter((v) => provenValues.includes(v));
+            const provenSet = new Set(provenValues.map(Number));
+            const merged = [];
+            uniqueNumeric(values).forEach((v) => {
+                if (provenSet.has(v)) merged.push(v);
+            });
+            return merged;
         }
 
-        function firstOf(arr, fallback = 0) {
-            return Array.isArray(arr) && arr.length > 0 ? Number(arr[0]) : Number(fallback);
+        function firstOf(arr, fallback) {
+            return Array.isArray(arr) && arr.length > 0 ? Number(arr[0]) : fallback;
         }
 
-        function numOr(value, fallback = 0) {
-            const n = Number(value);
-            return Number.isFinite(n) ? n : Number(fallback);
+        function wrapDegrees(value) {
+            let v = Number(value) || 0;
+            while (v > 180) v -= 360;
+            while (v < -180) v += 360;
+            return v;
         }
 
-        function normalizeEquipment(eq) {
-            const src = eq || {};
+        function normalizeEquipment(src) {
             const out = {};
             SLOT_ORDER.forEach((slot) => {
-                out[slot] = numOr(src[slot], 0);
+                out[slot] = numOr(src && src[slot], 0);
             });
             return out;
         }
 
         function getPresetById(id) {
-            return PRESET_CATALOG.find((p) => p.id === Number(id)) || null;
+            const key = Number(id);
+            return PRESET_CATALOG.find((p) => p.id === key) || null;
         }
 
-        function getItemMeta(itemId) {
-            return ITEM_CATALOG[itemId] || null;
+        function getItemMeta(id) {
+            return ITEM_CATALOG[Number(id)] || null;
         }
 
         function presetHasMappedItems(preset) {
             if (!preset || !preset.equipment) return false;
             const ids = Object.values(preset.equipment).filter((v) => Number(v) > 0).map(Number);
-            return ids.every((id) => !!ITEM_CATALOG[id]);
+            return ids.every((id) => !!getItemMeta(id));
         }
 
-        function presetSummary(preset) {
-            if (!preset) return '-';
-            const eq = normalizeEquipment(preset.equipment);
-            const parts = [];
-            if (eq.primary > 0) {
-                const meta = getItemMeta(eq.primary);
-                parts.push(meta ? meta.name : `ID ${eq.primary}`);
-            }
-            if (eq.secondary > 0) {
-                const meta = getItemMeta(eq.secondary);
-                parts.push(meta ? meta.name : `ID ${eq.secondary}`);
-            }
-            if (eq.item1 > 0) {
-                const meta = getItemMeta(eq.item1);
-                parts.push(meta ? meta.name : `ID ${eq.item1}`);
-            }
-            return parts.join(' / ') || 'Loadout inicial';
+        function getAvailablePresetIds(valuesFromConfig) {
+            const configValues = uniqueNumeric(valuesFromConfig);
+            const mappedPresetIds = PRESET_CATALOG.filter(presetHasMappedItems).map((p) => p.id);
+            const intersect = configValues.filter((id) => mappedPresetIds.includes(id));
+            if (intersect.length > 0) return intersect;
+            return mappedPresetIds;
         }
 
-        let characters = [];
-        let selectedId = null;
-        let selectedName = '';
-        let creatingInSlot = -1;
-        let isCreatingMode = false;
-        let cachedActiveCharId = null;
-        let characterCreateConfig = { ...PROVEN_PROFILE };
-
-        function setStatus(text, tone = 'ok') {
-            const el = document.getElementById('status');
-            el.className = 'status';
-            if (tone === 'err') el.classList.add('err');
-            if (tone === 'warn') el.classList.add('warn');
-            if (tone === 'ok') el.classList.add('ok');
-            el.textContent = String(text || '').toUpperCase();
+        function inferPresetFromCharacter(charData) {
+            if (!charData || !charData.equipment) return firstOf(characterCreateConfig.costumeValues, 0);
+            const currentEq = normalizeEquipment(charData.equipment);
+            for (const preset of PRESET_CATALOG) {
+                const presetEq = normalizeEquipment(preset.equipment);
+                const fullMatch = SLOT_ORDER.every((slot) => currentEq[slot] === presetEq[slot]);
+                if (fullMatch && characterCreateConfig.costumeValues.includes(preset.id)) {
+                    return preset.id;
+                }
+            }
+            return firstOf(characterCreateConfig.costumeValues, 0);
         }
 
         function normalizeCharCreate(data) {
@@ -964,246 +1663,753 @@
             };
         }
 
-        function fillSelect(selectId, values, labelResolver) {
-            const sel = document.getElementById(selectId);
-            sel.innerHTML = '';
-            values.forEach((value, index) => {
-                const opt = document.createElement('option');
-                opt.value = String(value);
-                opt.textContent = labelResolver(value, index);
-                sel.appendChild(opt);
-            });
-            if (values.length > 0) sel.value = String(values[0]);
-        }
-
-        function getAvailablePresetIds(valuesFromConfig) {
-            const configValues = uniqueNumeric(valuesFromConfig);
-            const mappedPresetIds = PRESET_CATALOG.filter(presetHasMappedItems).map((p) => p.id);
-            const intersect = configValues.filter((id) => mappedPresetIds.includes(id));
-            if (intersect.length > 0) return intersect;
-            return mappedPresetIds;
-        }
-
         function applyCharacterCreateConfig(config) {
             const safe = normalizeCharCreate({ characterCreate: config });
             const availablePresets = getAvailablePresetIds(safe.costumeValues);
 
             characterCreateConfig = {
                 ...safe,
-                costumeValues: availablePresets
+                costumeValues: availablePresets.length ? availablePresets : [...PROVEN_PROFILE.costumeValues]
             };
 
-            document.getElementById('char-name').maxLength = characterCreateConfig.maxNameLength;
+            if (wizard.isOpen) {
+                if (!characterCreateConfig.sexValues.includes(wizard.draft.sex)) wizard.draft.sex = firstOf(characterCreateConfig.sexValues, 0);
+                if (!characterCreateConfig.hairValues.includes(wizard.draft.hair)) wizard.draft.hair = firstOf(characterCreateConfig.hairValues, 0);
+                if (!characterCreateConfig.faceValues.includes(wizard.draft.face)) wizard.draft.face = firstOf(characterCreateConfig.faceValues, 0);
+                if (!characterCreateConfig.costumeValues.includes(wizard.draft.preset)) wizard.draft.preset = firstOf(characterCreateConfig.costumeValues, 0);
+                renderWizard();
+                applyPreviewFromWizard();
+            }
 
-            fillSelect('char-sex', characterCreateConfig.sexValues, (value) => Number(value) === 1 ? 'Feminino' : 'Masculino');
-            fillSelect('char-face', characterCreateConfig.faceValues, (_value, index) => `Rosto ${index + 1}`);
-            fillSelect('char-hair', characterCreateConfig.hairValues, (_value, index) => `Cabelo ${index + 1}`);
-            fillSelect('char-preset', characterCreateConfig.costumeValues, (value) => {
-                const preset = getPresetById(value);
-                return preset ? `${preset.name} [#${preset.id}]` : `Preset ${Number(value) + 1}`;
+            renderSlots();
+            updateActionButtons();
+        }
+
+        function setStatus(message, type = 'ok') {
+            const el = document.getElementById('status-toast');
+            el.textContent = String(message || '');
+            el.className = 'status-toast show ' + type;
+            if (toastTimer !== null) clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => {
+                el.classList.remove('show');
+            }, 2600);
+        }
+
+
+        function stageModeText() {
+            if (!wizard.isOpen) return 'Selecao';
+            const step = WIZARD_STEPS[wizard.step] || WIZARD_STEPS[0];
+            return 'Criacao - ' + step.title;
+        }
+
+        function setStageModeLabel() {
+            document.getElementById('stage-mode').textContent = stageModeText();
+        }
+
+        function updateOrbitButton() {
+            document.getElementById('btn-orbit').classList.toggle('active', cameraAutoOrbit);
+        }
+
+        function setCameraAutoOrbit(enabled) {
+            cameraAutoOrbit = !!enabled;
+            if (window.set_creation_camera_auto_orbit) {
+                set_creation_camera_auto_orbit(cameraAutoOrbit);
+            }
+            updateOrbitButton();
+        }
+
+        function resetCreationCamera(forceAuto = true) {
+            if (window.reset_creation_camera) {
+                reset_creation_camera();
+            }
+            if (forceAuto) setCameraAutoOrbit(true);
+            characterYawDeg = 0;
+        }
+
+        function adjustCreationCamera(yawDelta, pitchDelta, zoomDelta) {
+            if (!window.adjust_creation_camera) return false;
+            return !!adjust_creation_camera(yawDelta, pitchDelta, zoomDelta);
+        }
+
+        function adjustCreationCharacterYaw(deltaYawDeg) {
+            if (!window.adjust_creation_character_yaw) return false;
+            const ok = !!adjust_creation_character_yaw(deltaYawDeg);
+            if (ok) characterYawDeg = wrapDegrees(characterYawDeg + deltaYawDeg);
+            return ok;
+        }
+
+
+        function setCreationCameraPose(yawDeg, pitchDeg, distance, focusHeight, autoOrbit) {
+            if (!window.set_creation_camera_pose) return false;
+            const ok = !!set_creation_camera_pose(yawDeg, pitchDeg, distance, focusHeight, !!autoOrbit);
+            if (ok) {
+                cameraAutoOrbit = !!autoOrbit;
+                updateOrbitButton();
+            }
+            return ok;
+        }
+
+        function syncPreviewRect() {
+            if (!window.set_preview_rect) return;
+            const stage = document.querySelector('.stage-frame');
+            if (!stage) return;
+
+            const rect = stage.getBoundingClientRect();
+            const x = Math.max(0, Math.round(rect.left));
+            const y = Math.max(0, Math.round(rect.top));
+            const w = Math.max(0, Math.round(rect.width));
+            const h = Math.max(0, Math.round(rect.height));
+            set_preview_rect(x, y, w, h);
+        }
+
+        function schedulePreviewRectSync() {
+            requestAnimationFrame(() => {
+                syncPreviewRect();
+                setTimeout(syncPreviewRect, 80);
             });
+        }
 
-            const hidden = uniqueNumeric(safe.costumeValues).filter((id) => !availablePresets.includes(id));
-            if (hidden.length > 0) {
-                setStatus(`Presets ocultados por falta de mapeamento local: ${hidden.join(', ')}`, 'warn');
+        function applyViewPreset(mode) {
+            const views = {
+                front: { yaw: 0, pitch: 9, distance: 360, focus: 102, autoOrbit: false },
+                side: { yaw: 90, pitch: 9, distance: 360, focus: 102, autoOrbit: false },
+                back: { yaw: 180, pitch: 9, distance: 360, focus: 102, autoOrbit: false }
+            };
+            const view = views[mode] || views.front;
+            if (!setCreationCameraPose(view.yaw, view.pitch, view.distance, view.focus, view.autoOrbit)) {
+                resetCreationCamera(false);
+                if (mode === 'side') adjustCreationCamera(90, 0, 0);
+                if (mode === 'back') adjustCreationCamera(180, 0, 0);
+                setCameraAutoOrbit(false);
             }
-
-            renderPresetDetail(firstOf(characterCreateConfig.costumeValues, 0));
         }
 
-        function findCharacterById(id) {
-            return characters.find((c) => c.id === id) || null;
-        }
-
-        function inferPresetFromCharacter(charData) {
-            if (!charData || !charData.equipment) return firstOf(characterCreateConfig.costumeValues, 0);
-            const currentEq = normalizeEquipment(charData.equipment);
-
-            for (const preset of PRESET_CATALOG) {
-                const presetEq = normalizeEquipment(preset.equipment);
-                const fullMatch = SLOT_ORDER.every((slot) => currentEq[slot] === presetEq[slot]);
-                if (fullMatch && characterCreateConfig.costumeValues.includes(preset.id)) {
-                    return preset.id;
-                }
+        function moveCameraToWizardStep() {
+            const step = WIZARD_STEPS[wizard.step] || WIZARD_STEPS[0];
+            const pose = step.camera;
+            if (!setCreationCameraPose(pose.yaw, pose.pitch, pose.distance, pose.focus, pose.autoOrbit)) {
+                resetCreationCamera(false);
+                adjustCreationCamera(pose.yaw, pose.pitch - 10, pose.distance - 360);
+                setCameraAutoOrbit(pose.autoOrbit);
             }
-
-            return firstOf(characterCreateConfig.costumeValues, 0);
+            setStageModeLabel();
         }
 
-        function renderPresetDetail(presetId) {
-            const panel = document.getElementById('preset-detail');
-            const quick = document.getElementById('preset-quick-summary');
-            panel.innerHTML = '';
+        function runPresetMicroSpin() {
+            if (!window.adjust_creation_character_yaw) return;
+            const startYaw = characterYawDeg;
+            const sequence = [16, 13, 10, -11, -10, -9, -5, -4];
+            sequence.forEach((step, i) => {
+                setTimeout(() => {
+                    adjustCreationCharacterYaw(step);
+                }, i * 34);
+            });
+            setTimeout(() => {
+                const fix = wrapDegrees(startYaw - characterYawDeg);
+                if (Math.abs(fix) > 0.2) adjustCreationCharacterYaw(fix);
+            }, sequence.length * 34 + 42);
+        }
 
-            const preset = getPresetById(presetId);
-            if (!preset) {
-                quick.textContent = 'Preset indisponivel.';
-                const row = document.createElement('div');
-                row.className = 'preset-row';
-                row.innerHTML = '<span class="slot">Info</span><span class="item">Preset nao encontrado.</span>';
-                panel.appendChild(row);
+        function makeSlotIconSvg() {
+            return '<svg viewBox="0 0 24 24"><path d="m12 4 2.1 4.7L19 10l-3.7 3.5.9 5L12 16.4 7.8 18.5l.9-5L5 10l4.9-1.3Z"></path></svg>';
+        }
+
+        function makeWeaponSvg() {
+            return '<svg viewBox="0 0 24 24"><path d="M3 21 21 3"></path><path d="m14 4 6 6"></path><path d="M2 22h6"></path></svg>';
+        }
+
+        function makeBladeSvg() {
+            return '<svg viewBox="0 0 64 24"><path d="M4 18 42 6"></path><path d="M42 6h14"></path><path d="M8 16 5 20"></path></svg>';
+        }
+
+        function makePistolSvg() {
+            return '<svg viewBox="0 0 64 24"><path d="M4 10h37l7 3v4h-8l-3 5h-8l2-5H4z"></path><path d="M34 10V7h10"></path></svg>';
+        }
+
+        function makeSmgSvg() {
+            return '<svg viewBox="0 0 64 24"><path d="M4 11h44l6 2v4h-8l-4 5h-7l2-5H18v-4H4z"></path><path d="M22 11V8h9"></path></svg>';
+        }
+
+        function makeShotgunSvg() {
+            return '<svg viewBox="0 0 64 24"><path d="M4 12h50"></path><path d="M28 12v6h9l2-6"></path><path d="M49 12v3"></path></svg>';
+        }
+
+        function makeDualPistolSvg() {
+            return '<svg viewBox="0 0 64 24"><path d="M4 10h22l4 2v3h-5l-2 4h-6l1-4H4z"></path><path d="M34 10h22l4 2v3h-5l-2 4h-6l1-4H34z"></path></svg>';
+        }
+
+        function weaponSvgForItem(id, slot) {
+            const n = numOr(id, 0);
+            if (slot === 'melee') return makeBladeSvg();
+            if (n === 5001 || n === 5002) return makeSmgSvg();
+            if (n === 4002 || n === 4006) return makeDualPistolSvg();
+            if (n === 4001 || n === 4005) return makePistolSvg();
+            if (n === 30301 || n === 30401) return makeShotgunSvg();
+            return makeWeaponSvg();
+        }
+
+        function emptySlotWeaponSvg(index) {
+            const cycle = [makePistolSvg, makePistolSvg, makeShotgunSvg, makeDualPistolSvg];
+            const fn = cycle[Math.abs(numOr(index, 0)) % cycle.length];
+            return fn();
+        }
+
+        function pickSlotWeaponSvg(charData, index) {
+            const eq = normalizeEquipment(charData && charData.equipment ? charData.equipment : {});
+            const primaryId = numOr(eq.primary, 0);
+            const secondaryId = numOr(eq.secondary, 0);
+            const meleeId = numOr(eq.melee, 0);
+            if (primaryId > 0) return weaponSvgForItem(primaryId, 'primary');
+            if (secondaryId > 0) return weaponSvgForItem(secondaryId, 'secondary');
+            if (meleeId > 0) return weaponSvgForItem(meleeId, 'melee');
+            return emptySlotWeaponSvg(index);
+        }
+
+        function makeShieldSvg() {
+            return '<svg viewBox="0 0 24 24"><path d="m12 3 7 3v5c0 5-3.2 8.6-7 10-3.8-1.4-7-5-7-10V6z"></path><path d="m9.4 11.8 1.8 1.8 3.6-3.6"></path></svg>';
+        }
+
+        function setOverview(charData) {
+            const kickerName = document.getElementById('overview-kicker-name');
+            const nameEl = document.getElementById('overview-name');
+            const lvlEl = document.getElementById('overview-level');
+            const metaEl = document.getElementById('overview-meta');
+            const loadoutEl = document.getElementById('overview-loadout');
+
+            metaEl.innerHTML = '';
+            loadoutEl.innerHTML = '';
+
+            if (!charData) {
+                if (kickerName) kickerName.textContent = 'SLOT LIVRE';
+                nameEl.textContent = 'Slot Vazio';
+                lvlEl.textContent = 'LV 1';
+                const empty = document.createElement('div');
+                empty.className = 'meta-pill';
+                empty.textContent = 'Criar Operador';
+                metaEl.appendChild(empty);
+
+                const statBlock = document.createElement('div');
+                statBlock.className = 'stat-block';
+                statBlock.innerHTML =
+                    '<div class="stat-row">' +
+                        '<div class="stat-label">HP</div>' +
+                        '<div class="stat-track"><div class="stat-fill hp" style="width:100%"></div><div class="stat-value">50 / 50</div></div>' +
+                    '</div>' +
+                    '<div class="stat-row">' +
+                        '<div class="stat-label">AP</div>' +
+                        '<div class="stat-track"><div class="stat-fill ap" style="width:0%"></div><div class="stat-value">0 / 0</div></div>' +
+                    '</div>';
+                loadoutEl.appendChild(statBlock);
+
+                const weaponGrid = document.createElement('div');
+                weaponGrid.className = 'weapon-grid';
+                ['Melee', 'Primaria', 'Secundaria', 'Item'].forEach((label, idx) => {
+                    const card = document.createElement('div');
+                    card.className = 'weapon-card';
+                    card.innerHTML =
+                        '<div class="weapon-icon">' + emptySlotWeaponSvg(idx) + '</div>' +
+                        '<div class="weapon-name">' + label + '</div>';
+                    weaponGrid.appendChild(card);
+                });
+                loadoutEl.appendChild(weaponGrid);
                 return;
             }
 
-            quick.textContent = presetSummary(preset);
-            const eq = normalizeEquipment(preset.equipment);
-            SLOT_ORDER.forEach((slot) => {
-                const itemId = eq[slot];
-                const row = document.createElement('div');
-                row.className = 'preset-row';
-                const label = SLOT_LABELS[slot] || slot;
-                if (itemId > 0) {
-                    const meta = getItemMeta(itemId);
-                    const text = meta ? `${meta.name} (ID ${itemId})` : `ID ${itemId}`;
-                    row.innerHTML = `<span class="slot">${label}</span><span class="item">${text}</span>`;
-                } else {
-                    row.innerHTML = `<span class="slot">${label}</span><span class="item">-</span>`;
-                }
-                panel.appendChild(row);
+            if (kickerName) kickerName.textContent = String(charData.name || 'OPERADOR').toUpperCase();
+            nameEl.textContent = String(charData.name || 'Operador').toUpperCase();
+            lvlEl.textContent = 'LV ' + Math.max(1, numOr(charData.level, 1));
+
+            const meta = [
+                numOr(charData.sex, 0) === 1 ? 'Fem' : 'Masc',
+                'Face ' + (numOr(charData.face, 0) + 1),
+                'Hair ' + (numOr(charData.hair, 0) + 1)
+            ];
+            meta.forEach((text) => {
+                const item = document.createElement('div');
+                item.className = 'meta-pill';
+                item.textContent = text;
+                metaEl.appendChild(item);
             });
+
+            const hpCur = Math.max(0, numOr(charData.hp, 50));
+            const hpMax = Math.max(1, numOr(charData.maxHp, 50), hpCur);
+            const apCur = Math.max(0, numOr(charData.ap, 0));
+            const apMaxRaw = Math.max(numOr(charData.maxAp, 0), apCur);
+            const apMax = apMaxRaw <= 0 ? 1 : apMaxRaw;
+            const hpPct = Math.max(0, Math.min(100, (hpCur / hpMax) * 100));
+            const apPct = apMaxRaw <= 0 ? 0 : Math.max(0, Math.min(100, (apCur / apMax) * 100));
+
+            const statBlock = document.createElement('div');
+            statBlock.className = 'stat-block';
+            statBlock.innerHTML =
+                '<div class="stat-row">' +
+                    '<div class="stat-label">HP</div>' +
+                    '<div class="stat-track"><div class="stat-fill hp" style="width:' + hpPct.toFixed(2) + '%"></div><div class="stat-value">' + hpCur + ' / ' + hpMax + '</div></div>' +
+                '</div>' +
+                '<div class="stat-row">' +
+                    '<div class="stat-label">AP</div>' +
+                    '<div class="stat-track"><div class="stat-fill ap" style="width:' + apPct.toFixed(2) + '%"></div><div class="stat-value">' + apCur + ' / ' + (apMaxRaw <= 0 ? 0 : apMax) + '</div></div>' +
+                '</div>';
+            loadoutEl.appendChild(statBlock);
+
+            const eq = normalizeEquipment(charData.equipment || {});
+            const weaponGrid = document.createElement('div');
+            weaponGrid.className = 'weapon-grid';
+            ['melee', 'primary', 'secondary', 'item1'].forEach((slot) => {
+                const id = numOr(eq[slot], 0);
+                const item = getItemMeta(id);
+                const label = id > 0 ? (item ? item.name : ('ID ' + id)) : (SLOT_LABELS[slot] || slot);
+                const card = document.createElement('div');
+                card.className = 'weapon-card';
+                card.innerHTML =
+                    '<div class="weapon-icon">' + weaponSvgForItem(id, slot) + '</div>' +
+                    '<div class="weapon-name">' + String(label || '-').toUpperCase() + '</div>';
+                weaponGrid.appendChild(card);
+            });
+            loadoutEl.appendChild(weaponGrid);
         }
 
-        function updateActionButtons() {
-            const enterBtn = document.getElementById('btn-enter');
-            const deleteBtn = document.getElementById('btn-delete');
-            const hasSelection = !!selectedId;
+        function findCharacterById(id) {
+            const key = String(id || '');
+            if (!key) return null;
+            return characters.find((c) => String(c.id || '') === key) || null;
+        }
 
-            enterBtn.disabled = !hasSelection || isCreatingMode;
-            deleteBtn.style.display = hasSelection && !isCreatingMode ? 'inline-flex' : 'none';
-            deleteBtn.disabled = !hasSelection || isCreatingMode;
+        function slotCapacity() {
+            const maxSlots = Number(characterCreateConfig.slotsPerAccount || PROVEN_PROFILE.slotsPerAccount);
+            return Math.min(PROVEN_PROFILE.slotsPerAccount, Math.max(1, maxSlots));
+        }
 
-            const activeLabel = hasSelection ? selectedName : 'Sem selecao';
-            document.getElementById('active-name').textContent = activeLabel;
+        function firstFreeSlotIndex() {
+            const limit = slotCapacity();
+            for (let i = 0; i < limit; i++) {
+                if (!characters[i]) return i;
+            }
+            return -1;
         }
 
         function renderSlots() {
             const container = document.getElementById('slots');
             container.innerHTML = '';
 
-            const maxSlots = Number(characterCreateConfig.slotsPerAccount || PROVEN_PROFILE.slotsPerAccount);
-            const slotCount = Math.min(PROVEN_PROFILE.slotsPerAccount, Math.max(1, maxSlots));
-            document.getElementById('slot-count').textContent = `${characters.length}/${slotCount}`;
+            const count = slotCapacity();
+            document.getElementById('slot-count').textContent = characters.length + '/' + count;
 
-            for (let i = 0; i < slotCount; i++) {
+            for (let i = 0; i < count; i++) {
                 const char = characters[i];
-                const slot = document.createElement('div');
-                slot.className = 'char-slot' + (char && selectedId === char.id ? ' active' : '');
+                const row = document.createElement('div');
+                row.className = 'slot-item' + (char && selectedId === char.id ? ' active' : '');
 
                 if (char) {
-                    const sexLabel = Number(char.sex) === 1 ? 'FEM' : 'MASC';
-                    slot.innerHTML = `
-                        <div class="slot-icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"></circle><path d="M4 20a8 8 0 0 1 16 0"></path></svg>
-                        </div>
-                        <div class="slot-main">
-                            <div class="slot-name">${String(char.name || '').toUpperCase()}</div>
-                            <div class="slot-meta">LV ${numOr(char.level, 1)} | ${sexLabel} | FACE ${numOr(char.face, 0) + 1} | HAIR ${numOr(char.hair, 0) + 1}</div>
-                        </div>
-                    `;
-
-                    slot.onclick = () => {
+                    const sexLabel = numOr(char.sex, 0) === 1 ? 'Fem' : 'Masc';
+                    row.innerHTML =
+                        '<div class="slot-icon" aria-hidden="true">' + makeShieldSvg() + '</div>' +
+                        '<div style="min-width:0;">' +
+                        '<div class="slot-name">' + String(char.name || 'Operador').toUpperCase() + '</div>' +
+                        '<div class="slot-meta">LV ' + Math.max(1, numOr(char.level, 1)) + ' | ' + sexLabel + ' | Face ' + (numOr(char.face, 0) + 1) + ' | Hair ' + (numOr(char.hair, 0) + 1) + '</div>' +
+                        '</div>';
+                    row.onclick = () => {
+                        if (wizard.isOpen) {
+                            setStatus('Finalize a criacao antes de trocar slot.', 'warn');
+                            return;
+                        }
                         selectedId = char.id;
                         selectedName = char.name || '';
-                        updateActionButtons();
-                        renderSlots();
+                        invalidatePreviewRetry();
                         applyPreviewForCharacter(char);
-                        const inferredPreset = inferPresetFromCharacter(char);
-                        renderPresetDetail(inferredPreset);
-                        setStatus(`Selecionado: ${selectedName}.`, 'ok');
+                        setOverview(char);
+                        renderSlots();
+                        updateActionButtons();
+                        setStageModeLabel();
                     };
                 } else {
-                    slot.innerHTML = `
-                        <div class="slot-icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"></path></svg>
-                        </div>
-                        <div class="slot-main">
-                            <div class="slot-name">Slot Vazio</div>
-                            <div class="slot-empty">Clique para criar personagem</div>
-                        </div>
-                    `;
-                    slot.onclick = () => openCreateModal(i);
+                    row.innerHTML =
+                        '<div class="slot-icon" aria-hidden="true">' + makeSlotIconSvg() + '</div>' +
+                        '<div style="min-width:0;">' +
+                        '<div class="slot-name">Slot Vazio</div>' +
+                        '<div class="slot-meta slot-empty">Clique para criar personagem</div>' +
+                        '</div>';
+                    row.onclick = () => openWizard(i);
                 }
 
-                container.appendChild(slot);
+                container.appendChild(row);
             }
 
-            updateActionButtons();
+            const selected = selectedId ? findCharacterById(selectedId) : null;
+            setOverview(selected);
         }
 
-        function openCreateModal(slotIndex) {
-            creatingInSlot = slotIndex;
-            isCreatingMode = true;
+        function updateActionButtons() {
+            const btnEnter = document.getElementById('btn-enter');
+            const btnDelete = document.getElementById('btn-delete');
+            const btnCreate = document.getElementById('btn-create');
 
-            const modal = document.getElementById('create-modal-backdrop');
-            modal.classList.add('open');
+            btnEnter.disabled = !selectedId || wizard.isOpen;
+            btnDelete.disabled = !selectedId || wizard.isOpen;
+            if (btnCreate) btnCreate.disabled = wizard.isOpen || firstFreeSlotIndex() < 0;
+        }
 
-            const nameInput = document.getElementById('char-name');
-            nameInput.value = '';
+        function invalidatePreviewRetry() {
+            previewRetryToken += 1;
+        }
 
-            document.getElementById('char-sex').value = String(firstOf(characterCreateConfig.sexValues, 0));
-            document.getElementById('char-face').value = String(firstOf(characterCreateConfig.faceValues, 0));
-            document.getElementById('char-hair').value = String(firstOf(characterCreateConfig.hairValues, 0));
-            document.getElementById('char-preset').value = String(firstOf(characterCreateConfig.costumeValues, 0));
-
-            renderPresetDetail(parseInt(document.getElementById('char-preset').value || '0', 10));
-            updateActionButtons();
-            setStatus(`Modo de criacao ativo no slot ${slotIndex + 1}.`, 'ok');
+        function applyPreview(sex, face, preset, hair, attempt = 0, token = previewRetryToken) {
+            if (!window.set_character_preview) return false;
             if (window.set_preview_visible) set_preview_visible(true);
-            applyPreviewFromForm();
-            setTimeout(() => nameInput.focus(), 0);
+
+            const ok = !!set_character_preview(sex, face, preset, hair);
+            if (!ok && attempt < 10 && token === previewRetryToken) {
+                setTimeout(() => applyPreview(sex, face, preset, hair, attempt + 1, token), 130);
+            } else if (!ok) {
+                setStatus('Preview indisponivel.', 'err');
+            }
+            return ok;
         }
 
-        function closeCreateModal() {
-            document.getElementById('create-modal-backdrop').classList.remove('open');
-            creatingInSlot = -1;
-            isCreatingMode = false;
-            updateActionButtons();
+        function applyPreviewForCharacter(charData) {
+            if (!charData) return false;
+            const sex = numOr(charData.sex, firstOf(characterCreateConfig.sexValues, 0));
+            const face = numOr(charData.face, firstOf(characterCreateConfig.faceValues, 0));
+            const hair = numOr(charData.hair, firstOf(characterCreateConfig.hairValues, 0));
+            const preset = inferPresetFromCharacter(charData);
+            return applyPreview(sex, face, preset, hair);
+        }
 
-            if (!selectedId && window.set_preview_visible) {
+        function applyPreviewFromWizard() {
+            if (!wizard.isOpen) return false;
+            return applyPreview(wizard.draft.sex, wizard.draft.face, wizard.draft.preset, wizard.draft.hair);
+        }
+
+        function resetWizardDraft() {
+            wizard.draft = {
+                sex: firstOf(characterCreateConfig.sexValues, 0),
+                hair: firstOf(characterCreateConfig.hairValues, 0),
+                face: firstOf(characterCreateConfig.faceValues, 0),
+                preset: firstOf(characterCreateConfig.costumeValues, 0),
+                name: ''
+            };
+        }
+
+        function openWizard(slotIndex) {
+            if (slotIndex < 0) {
+                setStatus('Nao ha slot livre.', 'warn');
+                return;
+            }
+
+            wizard.isOpen = true;
+            wizard.step = 0;
+            wizard.busy = false;
+            wizard.slotIndex = slotIndex;
+            resetWizardDraft();
+
+            document.body.classList.add('wizard-open');
+            document.getElementById('wizard-overlay').classList.add('open');
+            setStageModeLabel();
+
+            if (window.set_preview_visible) set_preview_visible(true);
+            invalidatePreviewRetry();
+            applyPreviewFromWizard();
+            moveCameraToWizardStep();
+            renderWizard();
+            renderSlots();
+            updateActionButtons();
+            schedulePreviewRectSync();
+            setStatus('Criacao em 5 etapas iniciada.', 'ok');
+        }
+
+        function closeWizard() {
+            if (!wizard.isOpen) return;
+
+            wizard.isOpen = false;
+            wizard.busy = false;
+            wizard.step = 0;
+            wizard.slotIndex = -1;
+
+            document.body.classList.remove('wizard-open');
+            document.getElementById('wizard-overlay').classList.remove('open');
+
+            const selected = selectedId ? findCharacterById(selectedId) : null;
+            invalidatePreviewRetry();
+            if (selected) {
+                applyPreviewForCharacter(selected);
+            } else if (window.set_preview_visible) {
                 set_preview_visible(false);
             }
+
+            resetCreationCamera(true);
+            setStageModeLabel();
+            renderSlots();
+            updateActionButtons();
+            schedulePreviewRectSync();
         }
 
-        function openDeleteModal() {
-            if (isCreatingMode) {
-                setStatus('Finalize ou cancele o modo de criacao primeiro.', 'warn');
-                return;
-            }
-            if (!selectedId) {
-                setStatus('Selecione um personagem antes de deletar.', 'warn');
-                return;
-            }
+        function wizardStepTitle() {
+            return (WIZARD_STEPS[wizard.step] || WIZARD_STEPS[0]).title;
+        }
 
-            const current = findCharacterById(selectedId);
-            if (!current) {
-                setStatus('Personagem selecionado nao encontrado.', 'err');
-                return;
+        function renderProgress() {
+            const wrap = document.getElementById('wizard-progress');
+            wrap.innerHTML = '';
+            for (let i = 0; i < WIZARD_STEPS.length; i++) {
+                const dot = document.createElement('div');
+                dot.className = 'progress-dot';
+                if (i < wizard.step) dot.classList.add('done');
+                if (i === wizard.step) dot.classList.add('active');
+                wrap.appendChild(dot);
             }
+        }
 
-            selectedName = current.name || '';
-            document.getElementById('delete-char-name').textContent = selectedName;
-            const input = document.getElementById('delete-confirm-input');
-            input.value = '';
-            document.getElementById('delete-modal-backdrop').classList.add('open');
-            setStatus('Confirme a exclusao digitando o nome do personagem.', 'warn');
+        function renderSexStep(body) {
+            const grid = document.createElement('div');
+            grid.className = 'wizard-grid';
+
+            [
+                { value: 0, title: 'Masculino', sub: 'Base heroman' },
+                { value: 1, title: 'Feminino', sub: 'Base herowoman' }
+            ].forEach((item) => {
+                const card = document.createElement('div');
+                card.className = 'choice-card' + (wizard.draft.sex === item.value ? ' active' : '');
+                card.innerHTML = '<div class="choice-title">' + item.title + '</div><div class="choice-sub">' + item.sub + '</div>';
+                card.onclick = () => {
+                    wizard.draft.sex = item.value;
+                    applyPreviewFromWizard();
+                    renderWizard();
+                };
+                grid.appendChild(card);
+            });
+
+            body.appendChild(grid);
+        }
+
+        function renderVisualNumericStep(body, key, values, labelPrefix) {
+            const idx = Math.max(0, values.indexOf(wizard.draft[key]));
+
+            const row = document.createElement('div');
+            row.className = 'carousel';
+
+            const prev = document.createElement('button');
+            prev.className = 'slot-btn';
+            prev.type = 'button';
+            prev.textContent = '<';
+            prev.disabled = idx <= 0;
+            prev.onclick = () => {
+                if (idx <= 0) return;
+                wizard.draft[key] = values[idx - 1];
+                applyPreviewFromWizard();
+                renderWizard();
+            };
+
+            const next = document.createElement('button');
+            next.className = 'slot-btn';
+            next.type = 'button';
+            next.textContent = '>';
+            next.disabled = idx >= values.length - 1;
+            next.onclick = () => {
+                if (idx >= values.length - 1) return;
+                wizard.draft[key] = values[idx + 1];
+                applyPreviewFromWizard();
+                renderWizard();
+            };
+
+            const track = document.createElement('div');
+            track.className = 'carousel-track';
+
+            values.forEach((value, i) => {
+                const card = document.createElement('div');
+                card.className = 'choice-card' + (wizard.draft[key] === value ? ' active' : '');
+                card.innerHTML = '<div class="choice-title">' + labelPrefix + ' ' + (i + 1) + '</div><div class="choice-sub">ID ' + value + '</div>';
+                card.onclick = () => {
+                    wizard.draft[key] = value;
+                    applyPreviewFromWizard();
+                    renderWizard();
+                };
+                track.appendChild(card);
+            });
+
+            row.appendChild(prev);
+            row.appendChild(track);
+            row.appendChild(next);
+            body.appendChild(row);
+        }
+
+        function renderPresetStep(body) {
+            const values = characterCreateConfig.costumeValues.slice();
+            const idx = Math.max(0, values.indexOf(wizard.draft.preset));
+
+            const row = document.createElement('div');
+            row.className = 'carousel';
+
+            const prev = document.createElement('button');
+            prev.className = 'slot-btn';
+            prev.type = 'button';
+            prev.textContent = '<';
+            prev.disabled = idx <= 0;
+            prev.onclick = () => {
+                if (idx <= 0) return;
+                wizard.draft.preset = values[idx - 1];
+                applyPreviewFromWizard();
+                runPresetMicroSpin();
+                renderWizard();
+            };
+
+            const next = document.createElement('button');
+            next.className = 'slot-btn';
+            next.type = 'button';
+            next.textContent = '>';
+            next.disabled = idx >= values.length - 1;
+            next.onclick = () => {
+                if (idx >= values.length - 1) return;
+                wizard.draft.preset = values[idx + 1];
+                applyPreviewFromWizard();
+                runPresetMicroSpin();
+                renderWizard();
+            };
+
+            const track = document.createElement('div');
+            track.className = 'carousel-track';
+
+            values.forEach((presetId) => {
+                const preset = getPresetById(presetId);
+                const eq = normalizeEquipment(preset ? preset.equipment : {});
+                const card = document.createElement('div');
+                card.className = 'preset-card' + (wizard.draft.preset === presetId ? ' active' : '');
+                card.innerHTML =
+                    '<div class="preset-title">' + (preset ? preset.name : ('Preset ' + (presetId + 1))) + '</div>' +
+                    '<div class="preset-sub">Preset #' + presetId + '</div>';
+
+                const iconGrid = document.createElement('div');
+                iconGrid.className = 'preset-icons';
+
+                ['melee', 'primary', 'secondary', 'item1'].forEach((slot) => {
+                    const id = numOr(eq[slot], 0);
+                    const item = getItemMeta(id);
+                    const icon = document.createElement('div');
+                    icon.className = 'preset-icon';
+                    icon.innerHTML = makeWeaponSvg() + '<span>' + (item ? item.name : (SLOT_LABELS[slot] || slot)) + '</span>';
+                    iconGrid.appendChild(icon);
+                });
+
+                card.appendChild(iconGrid);
+                card.onclick = () => {
+                    wizard.draft.preset = presetId;
+                    applyPreviewFromWizard();
+                    runPresetMicroSpin();
+                    renderWizard();
+                };
+
+                track.appendChild(card);
+            });
+
+            row.appendChild(prev);
+            row.appendChild(track);
+            row.appendChild(next);
+            body.appendChild(row);
+        }
+
+        function renderConfirmStep(body) {
+            const nameBlock = document.createElement('div');
+            nameBlock.className = 'name-field';
+            nameBlock.innerHTML = '<label for="wizard-name-input">Nome do Personagem</label><input id="wizard-name-input" maxlength="' + characterCreateConfig.maxNameLength + '" placeholder="DIGITE O NOME" value="' + String(wizard.draft.name || '').replace(/\"/g, '') + '" />';
+            body.appendChild(nameBlock);
+
+            const summary = document.createElement('div');
+            summary.className = 'summary-row';
+
+            const preset = getPresetById(wizard.draft.preset);
+            const entries = [
+                { k: 'Sexo', v: wizard.draft.sex === 1 ? 'Feminino' : 'Masculino' },
+                { k: 'Cabelo', v: 'Opcao ' + (characterCreateConfig.hairValues.indexOf(wizard.draft.hair) + 1) },
+                { k: 'Rosto', v: 'Opcao ' + (characterCreateConfig.faceValues.indexOf(wizard.draft.face) + 1) },
+                { k: 'Preset', v: preset ? preset.name : ('#' + wizard.draft.preset) }
+            ];
+
+            entries.forEach((entry) => {
+                const chip = document.createElement('div');
+                chip.className = 'summary-chip';
+                chip.innerHTML = '<b>' + entry.k + '</b><span>' + entry.v + '</span>';
+                summary.appendChild(chip);
+            });
+
+            body.appendChild(summary);
+
+            const input = nameBlock.querySelector('input');
+            input.addEventListener('input', () => {
+                wizard.draft.name = String(input.value || '').trim();
+            });
             setTimeout(() => input.focus(), 0);
         }
 
-        function closeDeleteModal() {
-            document.getElementById('delete-modal-backdrop').classList.remove('open');
-            document.getElementById('delete-confirm-input').value = '';
-            document.getElementById('btn-delete-confirm').disabled = false;
+        function renderWizard() {
+            if (!wizard.isOpen) return;
+
+            const stepData = WIZARD_STEPS[wizard.step] || WIZARD_STEPS[0];
+            document.getElementById('wizard-title').textContent = stepData.title;
+            document.getElementById('wizard-step-label').textContent = stepData.subtitle;
+
+            renderProgress();
+
+            const body = document.getElementById('wizard-body');
+            body.innerHTML = '';
+
+            if (wizard.step === 0) {
+                renderSexStep(body);
+            } else if (wizard.step === 1) {
+                renderVisualNumericStep(body, 'hair', characterCreateConfig.hairValues, 'Cabelo');
+            } else if (wizard.step === 2) {
+                renderVisualNumericStep(body, 'face', characterCreateConfig.faceValues, 'Rosto');
+            } else if (wizard.step === 3) {
+                renderPresetStep(body);
+            } else {
+                renderConfirmStep(body);
+            }
+
+            const btnBack = document.getElementById('wizard-back');
+            const btnNext = document.getElementById('wizard-next');
+            const btnCancel = document.getElementById('wizard-cancel');
+
+            btnBack.disabled = wizard.step === 0 || wizard.busy;
+            btnCancel.disabled = wizard.busy;
+            btnNext.disabled = wizard.busy;
+            btnNext.textContent = wizard.step >= WIZARD_STEPS.length - 1 ? 'Confirmar Criacao' : 'Proximo';
         }
 
-        function handleCreateCharacter() {
-            const name = String(document.getElementById('char-name').value || '').trim();
-            const sex = parseInt(document.getElementById('char-sex').value || '0', 10);
-            const face = parseInt(document.getElementById('char-face').value || '0', 10);
-            const hair = parseInt(document.getElementById('char-hair').value || '0', 10);
-            const preset = parseInt(document.getElementById('char-preset').value || '0', 10);
+        function validateWizardDraft() {
+            if (!characterCreateConfig.sexValues.includes(wizard.draft.sex)) return false;
+            if (!characterCreateConfig.hairValues.includes(wizard.draft.hair)) return false;
+            if (!characterCreateConfig.faceValues.includes(wizard.draft.face)) return false;
+            if (!characterCreateConfig.costumeValues.includes(wizard.draft.preset)) return false;
+            return true;
+        }
 
+        function nextWizardStep() {
+            if (!wizard.isOpen || wizard.busy) return;
+            if (wizard.step < WIZARD_STEPS.length - 1) {
+                wizard.step += 1;
+                moveCameraToWizardStep();
+                renderWizard();
+                return;
+            }
+            confirmCreateFromWizard();
+        }
+
+        function prevWizardStep() {
+            if (!wizard.isOpen || wizard.busy || wizard.step <= 0) return;
+            wizard.step -= 1;
+            moveCameraToWizardStep();
+            renderWizard();
+        }
+
+        function confirmCreateFromWizard() {
+            if (!wizard.isOpen || wizard.busy) return;
+
+            const name = String(wizard.draft.name || '').trim();
             if (!name) {
-                setStatus('Informe um nome para o personagem.', 'warn');
+                setStatus('Informe um nome para criar.', 'warn');
+                return;
+            }
+
+            if (!validateWizardDraft()) {
+                setStatus('Parametros fora do perfil comprovado.', 'err');
                 return;
             }
 
@@ -1212,225 +2418,314 @@
                 return;
             }
 
-            if (!characterCreateConfig.sexValues.includes(sex) ||
-                !characterCreateConfig.faceValues.includes(face) ||
-                !characterCreateConfig.hairValues.includes(hair) ||
-                !characterCreateConfig.costumeValues.includes(preset)) {
-                setStatus('Parametros de criacao fora do perfil comprovado.', 'err');
-                return;
-            }
-
-            const btn = document.getElementById('btn-create-confirm');
-            btn.disabled = true;
+            wizard.busy = true;
+            renderWizard();
             setStatus('Criando personagem...', 'ok');
-            create_character(name, sex, face, preset, hair);
+            create_character(name, wizard.draft.sex, wizard.draft.face, wizard.draft.preset, wizard.draft.hair);
         }
 
-        function handleDeleteCharacter() {
-            if (!selectedId || !selectedName) {
-                setStatus('Selecione um personagem antes de deletar.', 'warn');
+        function handleCreateButton() {
+            if (wizard.isOpen) return;
+            const idx = firstFreeSlotIndex();
+            if (idx < 0) {
+                setStatus('Todos os slots estao ocupados.', 'warn');
                 return;
             }
-            if (!window.delete_character) {
-                setStatus('Bridge delete_character indisponivel.', 'err');
-                return;
-            }
-
-            const typed = String(document.getElementById('delete-confirm-input').value || '').trim();
-            if (typed !== selectedName) {
-                setStatus('Nome de confirmacao incorreto.', 'err');
-                return;
-            }
-
-            const btn = document.getElementById('btn-delete-confirm');
-            btn.disabled = true;
-            setStatus('Deletando personagem...', 'warn');
-            delete_character(selectedId);
-        }
-
-        function applyPreviewForCharacter(charData) {
-            if (!charData || !window.set_character_preview) return false;
-
-            const sex = numOr(charData.sex, firstOf(characterCreateConfig.sexValues, 0));
-            const face = numOr(charData.face, firstOf(characterCreateConfig.faceValues, 0));
-            const hair = numOr(charData.hair, firstOf(characterCreateConfig.hairValues, 0));
-            const preset = inferPresetFromCharacter(charData);
-
-            if (window.set_preview_visible) set_preview_visible(true);
-            const ok = !!set_character_preview(sex, face, preset, hair);
-            if (!ok) {
-                setStatus('Preview indisponivel: pacote ou texturas invalidas.', 'err');
-            }
-            return ok;
-        }
-
-        function applyPreviewFromForm() {
-            if (!window.set_character_preview) return false;
-
-            const sex = parseInt(document.getElementById('char-sex').value || '0', 10);
-            const face = parseInt(document.getElementById('char-face').value || '0', 10);
-            const hair = parseInt(document.getElementById('char-hair').value || '0', 10);
-            const preset = parseInt(document.getElementById('char-preset').value || '0', 10);
-
-            renderPresetDetail(preset);
-
-            const ok = !!set_character_preview(sex, face, preset, hair);
-            if (!ok) {
-                setStatus('Preview indisponivel: pacote ou texturas invalidas.', 'err');
-            }
-            return ok;
+            openWizard(idx);
         }
 
         function handleSelectCharacter() {
-            if (isCreatingMode) {
-                setStatus('Finalize ou cancele o modo de criacao primeiro.', 'warn');
+            if (wizard.isOpen) {
+                setStatus('Finalize ou cancele a criacao primeiro.', 'warn');
                 return;
             }
             if (!selectedId) {
-                setStatus('Selecione um personagem antes de acessar.', 'warn');
+                setStatus('Selecione um personagem.', 'warn');
                 return;
             }
             if (!window.select_character) {
                 setStatus('Bridge select_character indisponivel.', 'err');
                 return;
             }
-
             setStatus('Selecionando personagem...', 'ok');
             select_character(selectedId);
         }
 
-        window.onload = () => {
-            applyCharacterCreateConfig(characterCreateConfig);
-            renderSlots();
-            if (window.fetch_bootstrap_v2) fetch_bootstrap_v2();
-            if (window.list_characters) list_characters();
-        };
-
-        document.addEventListener('keydown', (ev) => {
-            const createOpen = document.getElementById('create-modal-backdrop').classList.contains('open');
-            const deleteOpen = document.getElementById('delete-modal-backdrop').classList.contains('open');
-
-            if (createOpen) {
-                if (ev.key === 'Escape') closeCreateModal();
-                else if (ev.key === 'Enter') handleCreateCharacter();
+        function handleLogout() {
+            if (wizard.isOpen || (document.getElementById('delete-modal') && document.getElementById('delete-modal').classList.contains('open'))) {
+                setStatus('Feche dialogs ativos antes de sair.', 'warn');
                 return;
             }
+            setStatus('Saindo para login...', 'ok');
+            setTimeout(() => {
+                window.location.href = 'login.html';
+            }, 120);
+        }
 
-            if (deleteOpen) {
-                if (ev.key === 'Escape') closeDeleteModal();
-                else if (ev.key === 'Enter') handleDeleteCharacter();
+        function openDeleteModal() {
+            if (wizard.isOpen) {
+                setStatus('Finalize a criacao antes de deletar.', 'warn');
                 return;
             }
+            if (!selectedId) {
+                setStatus('Selecione um personagem para deletar.', 'warn');
+                return;
+            }
+            const current = findCharacterById(selectedId);
+            if (!current) {
+                setStatus('Personagem nao encontrado.', 'err');
+                return;
+            }
+            selectedName = current.name || '';
+            document.getElementById('delete-char-name').textContent = selectedName;
+            document.getElementById('delete-confirm-input').value = '';
+            document.getElementById('delete-modal').classList.add('open');
+            setTimeout(() => document.getElementById('delete-confirm-input').focus(), 0);
+        }
 
-            if (ev.key === 'Enter') handleSelectCharacter();
-        });
+        function closeDeleteModal() {
+            document.getElementById('delete-modal').classList.remove('open');
+            document.getElementById('delete-confirm-input').value = '';
+            document.getElementById('btn-delete-confirm').disabled = false;
+        }
 
-        document.getElementById('char-sex').addEventListener('change', applyPreviewFromForm);
-        document.getElementById('char-face').addEventListener('change', applyPreviewFromForm);
-        document.getElementById('char-hair').addEventListener('change', applyPreviewFromForm);
-        document.getElementById('char-preset').addEventListener('change', applyPreviewFromForm);
+        function confirmDelete() {
+            if (!selectedId || !window.delete_character) return;
+            const typed = String(document.getElementById('delete-confirm-input').value || '').trim();
+            if (typed !== selectedName) {
+                setStatus('Nome de confirmacao incorreto.', 'err');
+                return;
+            }
+            document.getElementById('btn-delete-confirm').disabled = true;
+            setStatus('Deletando personagem...', 'warn');
+            delete_character(selectedId);
+        }
+
+        function bindStageControls() {
+            const stage = document.getElementById('stage-interaction');
+            if (!stage) return;
+
+            let dragging = false;
+            let dragMode = 'yaw';
+            let lastX = 0;
+            let lastY = 0;
+            let pointerId = null;
+
+            stage.oncontextmenu = (ev) => ev.preventDefault();
+
+            stage.addEventListener('pointerdown', (ev) => {
+                dragging = true;
+                pointerId = ev.pointerId;
+                stage.setPointerCapture(pointerId);
+                stage.classList.add('dragging');
+                lastX = ev.clientX;
+                lastY = ev.clientY;
+                dragMode = ev.shiftKey || ev.button === 2 ? 'camera' : 'yaw';
+            });
+
+            stage.addEventListener('pointermove', (ev) => {
+                if (!dragging || ev.pointerId !== pointerId) return;
+                const dx = ev.clientX - lastX;
+                const dy = ev.clientY - lastY;
+                lastX = ev.clientX;
+                lastY = ev.clientY;
+
+                let used = false;
+                if (dragMode === 'camera') {
+                    used = adjustCreationCamera(dx * 0.22, -dy * 0.2, 0);
+                } else {
+                    used = adjustCreationCharacterYaw(dx * 0.52);
+                }
+
+                if (used && cameraAutoOrbit) setCameraAutoOrbit(false);
+            });
+
+            const endDrag = (ev) => {
+                if (ev.pointerId !== pointerId) return;
+                dragging = false;
+                stage.classList.remove('dragging');
+                if (pointerId !== null) {
+                    try { stage.releasePointerCapture(pointerId); } catch (e) {}
+                }
+                pointerId = null;
+            };
+
+            stage.addEventListener('pointerup', endDrag);
+            stage.addEventListener('pointercancel', endDrag);
+            stage.addEventListener('wheel', (ev) => {
+                const used = adjustCreationCamera(0, 0, ev.deltaY > 0 ? 24 : -24);
+                if (used && cameraAutoOrbit) setCameraAutoOrbit(false);
+                ev.preventDefault();
+            }, { passive: false });
+        }
+
+        function requestInitialCharacterList() {
+            if (initialCharacterListRequested) return;
+            if (!window.list_characters) return;
+            initialCharacterListRequested = true;
+            list_characters();
+        }
 
         window.onBootstrapV2 = (data) => {
             if (!data || data.ok === false) {
-                const reason = data && (data.reason || data.message) ? (data.reason || data.message) : 'bootstrap indisponivel';
-                setStatus(`Bootstrap v2 falhou: ${reason}`, 'warn');
+                setStatus('Bootstrap v2 indisponivel. Usando perfil local.', 'warn');
+                requestInitialCharacterList();
                 return;
             }
-
             const cfg = normalizeCharCreate(data);
             applyCharacterCreateConfig(cfg);
-            setStatus('Bootstrap v2 carregado com perfil comprovado.', 'ok');
-            if (isCreatingMode) applyPreviewFromForm();
+            setStatus('Bootstrap v2 carregado.', 'ok');
+            requestInitialCharacterList();
         };
 
         window.onRtProtocolError = (err) => {
             const code = err && err.code ? String(err.code) : 'RT_PROTOCOL_ERROR';
-            const detail = err && (err.detail || err.message) ? String(err.detail || err.message) : 'erro desconhecido';
-            setStatus(`${code}: ${detail}`, 'err');
+            const detail = err && (err.detail || err.message) ? String(err.detail || err.message) : 'erro';
+            if (code === 'BOOTSTRAP_ERROR') return;
+            setStatus(code + ': ' + detail, 'err');
         };
 
         window.onCharacterList = (data) => {
-            characters = Array.isArray(data && data.characters) ? data.characters.slice().sort((a, b) => numOr(a.charIndex, 0) - numOr(b.charIndex, 0)) : [];
+            characters = Array.isArray(data && data.characters)
+                ? data.characters.slice().sort((a, b) => numOr(a.charIndex, 0) - numOr(b.charIndex, 0))
+                : [];
+
             cachedActiveCharId = data && data.activeCharId ? String(data.activeCharId) : null;
+            if (characters.length > 0) hasAutoOpenedCreateFlow = false;
 
             if (selectedId && !findCharacterById(selectedId)) {
                 selectedId = null;
                 selectedName = '';
             }
 
-            if (!isCreatingMode && !selectedId && cachedActiveCharId && findCharacterById(cachedActiveCharId)) {
+            if (!wizard.isOpen && !selectedId && cachedActiveCharId && findCharacterById(cachedActiveCharId)) {
                 selectedId = cachedActiveCharId;
                 const active = findCharacterById(selectedId);
                 selectedName = active ? (active.name || '') : '';
             }
 
-            if (!isCreatingMode && !selectedId && characters.length > 0) {
+            if (!wizard.isOpen && !selectedId && characters.length > 0) {
                 selectedId = characters[0].id;
                 selectedName = characters[0].name || '';
             }
 
             renderSlots();
+            schedulePreviewRectSync();
 
-            if (!isCreatingMode) {
+            if (!wizard.isOpen) {
                 const selected = selectedId ? findCharacterById(selectedId) : null;
+                invalidatePreviewRetry();
                 if (selected) {
                     applyPreviewForCharacter(selected);
-                    renderPresetDetail(inferPresetFromCharacter(selected));
-                } else {
-                    renderPresetDetail(firstOf(characterCreateConfig.costumeValues, 0));
-                    if (window.set_preview_visible) set_preview_visible(false);
+                } else if (characters.length === 0 && window.set_preview_visible) {
+                    set_preview_visible(false);
                 }
             }
 
-            const hasFreeSlot = characters.length < characterCreateConfig.slotsPerAccount;
-            if (!hasFreeSlot) {
-                setStatus('Todos os slots estao ocupados.', 'warn');
+            updateActionButtons();
+            setStageModeLabel();
+
+            const hasFree = characters.length < slotCapacity();
+            if (!wizard.isOpen && characters.length === 0 && hasFree && !hasAutoOpenedCreateFlow) {
+                hasAutoOpenedCreateFlow = true;
+                openWizard(0);
             }
+        };
+
+        window.onCharacterListError = (result) => {
+            const msg = result && result.message ? String(result.message) : 'Falha ao listar personagens.';
+            setStatus(msg, 'err');
         };
 
         window.onCreateCharacterResult = (result) => {
-            const btn = document.getElementById('btn-create-confirm');
-            btn.disabled = false;
-
+            wizard.busy = false;
+            renderWizard();
             if (result && result.success) {
-                closeCreateModal();
-                setStatus('Personagem criado com sucesso.', 'ok');
+                setStatus('Personagem criado.', 'ok');
+                closeWizard();
                 if (window.list_characters) list_characters();
-            } else {
-                const msg = result && result.message ? result.message : 'erro desconhecido';
-                setStatus(`Falha ao criar personagem: ${msg}`, 'err');
+                return;
             }
+            const msg = result && result.message ? String(result.message) : 'Falha ao criar personagem.';
+            setStatus(msg, 'err');
         };
 
         window.onDeleteCharacterResult = (result) => {
-            const btn = document.getElementById('btn-delete-confirm');
-            btn.disabled = false;
-
             if (result && result.success) {
+                setStatus('Personagem deletado.', 'ok');
                 closeDeleteModal();
                 selectedId = null;
                 selectedName = '';
-                updateActionButtons();
-                setStatus('Personagem deletado com sucesso.', 'ok');
                 if (window.list_characters) list_characters();
-            } else {
-                const msg = result && result.message ? result.message : 'erro desconhecido';
-                setStatus(`Falha ao deletar: ${msg}`, 'err');
+                return;
             }
+            const msg = result && result.message ? String(result.message) : 'Falha ao deletar personagem.';
+            setStatus(msg, 'err');
+            document.getElementById('btn-delete-confirm').disabled = false;
         };
 
         window.onSelectCharacterResult = (result) => {
             if (result && result.success) {
-                setStatus('Personagem selecionado. Entrando no lobby...', 'ok');
+                setStatus('Personagem selecionado. Entrando...', 'ok');
                 if (window.enter_lobby) {
-                    enter_lobby();
-                } else {
-                    window.location.href = 'lobby.html';
+                    setTimeout(() => enter_lobby(), 120);
                 }
-            } else {
-                const msg = result && result.message ? result.message : 'erro desconhecido';
-                setStatus(`Falha ao selecionar: ${msg}`, 'err');
+                return;
             }
+            const msg = result && result.message ? String(result.message) : 'Falha ao selecionar personagem.';
+            setStatus(msg, 'err');
+        };
+
+        window.onload = () => {
+            bindStageControls();
+            updateOrbitButton();
+            setStageModeLabel();
+            renderSlots();
+            updateActionButtons();
+            resetCreationCamera(false);
+            schedulePreviewRectSync();
+
+            window.addEventListener('resize', schedulePreviewRectSync);
+
+            if (window.fetch_bootstrap_v2) fetch_bootstrap_v2();
+            else requestInitialCharacterList();
+
+            document.getElementById('btn-orbit').addEventListener('click', () => setCameraAutoOrbit(!cameraAutoOrbit));
+            document.getElementById('btn-cam-reset').addEventListener('click', () => resetCreationCamera(true));
+            document.getElementById('btn-view-front').addEventListener('click', () => applyViewPreset('front'));
+            document.getElementById('btn-view-side').addEventListener('click', () => applyViewPreset('side'));
+            document.getElementById('btn-view-back').addEventListener('click', () => applyViewPreset('back'));
+
+            document.getElementById('btn-create').addEventListener('click', handleCreateButton);
+            document.getElementById('btn-delete').addEventListener('click', openDeleteModal);
+            document.getElementById('btn-enter').addEventListener('click', handleSelectCharacter);
+            document.getElementById('btn-logout').addEventListener('click', handleLogout);
+
+            document.getElementById('wizard-cancel').addEventListener('click', closeWizard);
+            document.getElementById('wizard-back').addEventListener('click', prevWizardStep);
+            document.getElementById('wizard-next').addEventListener('click', nextWizardStep);
+
+            document.getElementById('btn-delete-cancel').addEventListener('click', closeDeleteModal);
+            document.getElementById('btn-delete-confirm').addEventListener('click', confirmDelete);
+
+            document.addEventListener('keydown', (ev) => {
+                const deleteOpen = document.getElementById('delete-modal').classList.contains('open');
+                if (deleteOpen) {
+                    if (ev.key === 'Escape') closeDeleteModal();
+                    else if (ev.key === 'Enter') confirmDelete();
+                    return;
+                }
+
+                if (wizard.isOpen) {
+                    if (ev.key === 'Escape') closeWizard();
+                    else if (ev.key === 'Enter') nextWizardStep();
+                    else if (ev.key === 'ArrowLeft') prevWizardStep();
+                    else if (ev.key === 'ArrowRight') nextWizardStep();
+                    return;
+                }
+
+                if (ev.key === 'Enter') handleSelectCharacter();
+            });
         };
     </script>
 </body>

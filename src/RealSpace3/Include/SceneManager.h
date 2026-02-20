@@ -18,8 +18,15 @@ public:
     void loadLobbyBasic();
     void update(float deltaTime);
     void draw(ID3D11DeviceContext* context);
+    void drawShowcaseOverlay(ID3D11DeviceContext* context);
+    void setShowcaseViewport(int x, int y, int width, int height);
     bool setCreationPreview(int sex, int face, int preset, int hair);
     void setCreationPreviewVisible(bool visible);
+    bool adjustCreationCamera(float yawDeltaDeg, float pitchDeltaDeg, float zoomDelta);
+    bool adjustCreationCharacterYaw(float yawDeltaDeg);
+    bool setCreationCameraPose(float yawDeg, float pitchDeg, float distance, float focusHeight, bool autoOrbit);
+    void setCreationCameraAutoOrbit(bool enabled);
+    void resetCreationCamera();
     void setSize(int w, int h);
 
 private:

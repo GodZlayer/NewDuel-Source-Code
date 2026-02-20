@@ -3,6 +3,8 @@
 #include "LoadingManager.h"
 #include "NakamaManager.h"
 #include "RealSpace3/Include/SceneManager.h"
+#include <algorithm>
+#include <chrono>
 
 void RenderManager::init(RealSpace3::RDeviceDX11* device) {
     m_pDevice = device;
@@ -11,9 +13,15 @@ void RenderManager::init(RealSpace3::RDeviceDX11* device) {
 void RenderManager::render() {
     if (!m_pDevice) return;
 
+    static auto lastFrameTick = std::chrono::steady_clock::now();
+    const auto now = std::chrono::steady_clock::now();
+    float dt = std::chrono::duration<float>(now - lastFrameTick).count();
+    lastFrameTick = now;
+    if (dt <= 0.0f || dt > 1.0f) dt = 1.0f / 60.0f;
+    dt = std::clamp(dt, 1.0f / 240.0f, 1.0f / 20.0f);
+
     Nakama::NakamaManager::getInstance().tick();
     UIManager::getInstance().update();
-    float dt = 0.016f;
     LoadingManager::getInstance().update(dt);
     RealSpace3::SceneManager::getInstance().update(dt);
 
@@ -34,6 +42,10 @@ void RenderManager::render() {
         m_pDevice->DrawUI();
     }
 
-    // 4. Exibição
+    // 4. Renderiza o showcase por cima da UI
+    m_pDevice->SetStandard3DStates();
+    RealSpace3::SceneManager::getInstance().drawShowcaseOverlay(m_pDevice->GetContext());
+
+    // 5. Exibição
     m_pDevice->Present();
 }

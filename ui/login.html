@@ -328,6 +328,11 @@
             overflow: hidden;
         }
 
+        .action:disabled {
+            cursor: wait;
+            filter: saturate(0.82);
+        }
+
         .action::before {
             content: "";
             position: absolute;
@@ -351,12 +356,47 @@
             transform: translateY(0);
         }
 
+        .action-label {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 240px;
+        }
+
         .action svg {
             width: 19px;
             height: 19px;
             stroke: #f0fbff;
             stroke-width: 2;
             fill: none;
+        }
+
+        .action-arrow {
+            opacity: 1;
+            transform: translateX(0);
+            transition: opacity 160ms ease, transform 160ms ease;
+        }
+
+        .action-spinner {
+            position: absolute;
+            right: 16px;
+            width: 18px;
+            height: 18px;
+            opacity: 0;
+            transition: opacity 160ms ease;
+            pointer-events: none;
+            animation: spin 760ms linear infinite;
+            animation-play-state: paused;
+        }
+
+        .action[data-busy="true"] .action-spinner {
+            opacity: 1;
+            animation-play-state: running;
+        }
+
+        .action[data-busy="true"] .action-arrow {
+            opacity: 0;
+            transform: translateX(5px);
         }
 
         .register-row {
@@ -419,6 +459,11 @@
         @keyframes rise {
             from { opacity: 0; transform: translateY(18px) scale(0.985); }
             to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
         }
 
         @media (max-width: 720px) {
@@ -508,10 +553,13 @@
             </div>
 
             <button type="button" id="login-btn" class="action" onclick="handleLogin()">
-                <span>LOGIN E REGISTRO*</span>
-                <svg viewBox="0 0 24 24" aria-hidden="true">
+                <span class="action-label">LOGIN E REGISTRO*</span>
+                <svg class="action-arrow" viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M5 12h14"></path>
                     <path d="m13 6 6 6-6 6"></path>
+                </svg>
+                <svg class="action-spinner" viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="12" cy="12" r="8" stroke-dasharray="36 16"></circle>
                 </svg>
             </button>
 
@@ -526,6 +574,37 @@
             visible: '<path d="M2 12s3.8-6 10-6 10 6 10 6-3.8 6-10 6-10-6-10-6Z"></path><circle cx="12" cy="12" r="2.7"></circle>',
             hidden: '<path d="M3 3 21 21"></path><path d="M10.7 6.3A10.7 10.7 0 0 1 12 6c6.2 0 10 6 10 6a16 16 0 0 1-4 4.5"></path><path d="M6.7 6.7A16.2 16.2 0 0 0 2 12s3.8 6 10 6c1.7 0 3.2-.3 4.5-.9"></path><path d="M10 10a2.8 2.8 0 0 0 4 4"></path>'
         };
+        let loginInFlight = false;
+        let loginWatchdog = null;
+
+        function clearLoginWatchdog() {
+            if (loginWatchdog !== null) {
+                clearTimeout(loginWatchdog);
+                loginWatchdog = null;
+            }
+        }
+
+        function armLoginWatchdog() {
+            clearLoginWatchdog();
+            loginWatchdog = setTimeout(() => {
+                if (!loginInFlight) return;
+                setLoginBusy(false);
+                setStatus('Falha de conexao com o servidor (timeout).', 'err');
+            }, 35000);
+        }
+
+        function setLoginBusy(busy) {
+            loginInFlight = !!busy;
+            if (!loginInFlight) clearLoginWatchdog();
+            const btn = document.getElementById('login-btn');
+            if (btn) {
+                btn.disabled = loginInFlight;
+                btn.dataset.busy = loginInFlight ? 'true' : 'false';
+                btn.setAttribute('aria-busy', loginInFlight ? 'true' : 'false');
+                const label = btn.querySelector('.action-label');
+                if (label) label.textContent = loginInFlight ? 'CONECTANDO...' : 'LOGIN E REGISTRO*';
+            }
+        }
 
         function normalizeStatusText(text) {
             return String(text || '').trim().toUpperCase();
@@ -547,6 +626,7 @@
         }
 
         function handleLogin() {
+            if (loginInFlight) return;
             const user = String(document.getElementById('l-user').value || '').trim();
             const pass = String(document.getElementById('l-pass').value || '');
             if (!user || !pass) {
@@ -556,7 +636,14 @@
 
             persistCredentials(user, pass);
             setStatus('Autenticando...', 'pending');
-            if (window.login) login(user, pass);
+            if (window.login) {
+                setLoginBusy(true);
+                armLoginWatchdog();
+                login(user, pass);
+            } else {
+                setLoginBusy(false);
+                setStatus('Bridge de login indisponivel.', 'err');
+            }
         }
 
         function setupPassToggle() {
@@ -605,10 +692,12 @@
             restoreLocalCredentials();
             setupPassToggle();
             setupHotkeys();
+            setLoginBusy(false);
             setStatus('Terminal Pronto.');
         };
 
         window.setAuthStatus = (msg, success) => {
+            setLoginBusy(false);
             setStatus(msg, success ? 'ok' : 'err');
         };
     </script>

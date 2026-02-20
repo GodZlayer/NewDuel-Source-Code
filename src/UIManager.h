@@ -41,4 +41,5 @@ private:
     std::mutex m_urlMutex;
     int m_width = 0;
     int m_height = 0;
+    int m_forceRepaintFrames = 0;
 };

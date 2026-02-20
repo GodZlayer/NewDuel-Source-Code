@@ -53,6 +53,7 @@ target_link_libraries(GunzNakama
     d3dcompiler
     dxgi
     ws2_32
+    winhttp
     crypt32
     advapi32
     shell32

@@ -638,9 +638,103 @@ function textureUriFromIndex(gltf, textureIndex) {
   if (textureIndex == null) return "";
   const tex = (gltf.textures || [])[textureIndex];
   if (!tex) return "";
-  const img = (gltf.images || [])[tex.source];
-  if (!img || !img.uri) return "";
-  return normalizeSlash(String(img.uri));
+  const imageIndex = Number(tex.source);
+  const img = (gltf.images || [])[imageIndex];
+  if (!img) return "";
+  if (img.uri) {
+    return normalizeSlash(String(img.uri));
+  }
+  if (img.bufferView != null) {
+    return `__embedded_image_${imageIndex}__`;
+  }
+  return "";
+}
+
+function extFromMime(mimeType) {
+  const lower = String(mimeType || "").toLowerCase();
+  if (lower.includes("jpeg") || lower.includes("jpg")) return "jpg";
+  if (lower.includes("png")) return "png";
+  if (lower.includes("webp")) return "webp";
+  if (lower.includes("bmp")) return "bmp";
+  if (lower.includes("tga")) return "tga";
+  return "bin";
+}
+
+function decodeDataUri(uri) {
+  if (!uri || !String(uri).startsWith("data:")) return Buffer.alloc(0);
+  const text = String(uri);
+  const comma = text.indexOf(",");
+  if (comma < 0) return Buffer.alloc(0);
+  const meta = text.slice(0, comma).toLowerCase();
+  const payload = text.slice(comma + 1);
+  if (meta.endsWith(";base64")) {
+    return Buffer.from(payload, "base64");
+  }
+  return Buffer.from(decodeURIComponent(payload), "utf8");
+}
+
+function materializeEmbeddedTextures(gltf, bin, modelDir, materials) {
+  const images = gltf.images || [];
+  const views = gltf.bufferViews || [];
+  const written = new Map();
+
+  function writeImage(imageIndex) {
+    if (written.has(imageIndex)) {
+      return written.get(imageIndex);
+    }
+
+    const img = images[imageIndex];
+    if (!img) return "";
+
+    if (img.uri && !String(img.uri).startsWith("data:")) {
+      const rel = normalizeSlash(String(img.uri));
+      written.set(imageIndex, rel);
+      return rel;
+    }
+
+    let bytes = Buffer.alloc(0);
+    if (img.bufferView != null) {
+      const bv = views[img.bufferView];
+      if (bv) {
+        const byteOffset = Number(bv.byteOffset) || 0;
+        const byteLength = Number(bv.byteLength) || 0;
+        const end = byteOffset + byteLength;
+        if (byteLength > 0 && end <= bin.length) {
+          bytes = bin.slice(byteOffset, end);
+        }
+      }
+    } else if (img.uri && String(img.uri).startsWith("data:")) {
+      bytes = decodeDataUri(img.uri);
+    }
+
+    if (!bytes.length) return "";
+
+    const texturesDir = path.join(modelDir, "textures");
+    ensureDir(texturesDir);
+    const ext = extFromMime(img.mimeType);
+    const fileName = `embedded_${imageIndex}.${ext}`;
+    const outPath = path.join(texturesDir, fileName);
+    fs.writeFileSync(outPath, bytes);
+    const rel = normalizeSlash(path.join("textures", fileName));
+    written.set(imageIndex, rel);
+    return rel;
+  }
+
+  function resolveTextureRef(v) {
+    const token = String(v || "");
+    const match = /^__embedded_image_(\d+)__$/.exec(token);
+    if (!match) return token;
+    const imageIndex = Number(match[1]);
+    return writeImage(imageIndex);
+  }
+
+  for (const m of materials) {
+    m.baseColorTexture = resolveTextureRef(m.baseColorTexture);
+    m.normalTexture = resolveTextureRef(m.normalTexture);
+    m.ormTexture = resolveTextureRef(m.ormTexture);
+    m.emissiveTexture = resolveTextureRef(m.emissiveTexture);
+    m.opacityTexture = resolveTextureRef(m.opacityTexture);
+  }
 }
 
 function writeMeshBin(model, outPath) {
@@ -851,6 +945,7 @@ function main() {
 
     const modelDir = path.join(outputRoot, normalizeSlash(e.modelId));
     ensureDir(modelDir);
+    materializeEmbeddedTextures(parsed.json, parsed.bin, modelDir, extracted.materials);
 
     const meshPath = path.join(modelDir, "mesh.bin");
     const skeletonPath = path.join(modelDir, "skeleton.bin");

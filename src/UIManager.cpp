@@ -32,6 +32,7 @@ std::string JsonEscape(const std::string& value) {
     for (unsigned char c : value) {
         switch (c) {
         case '\"': out += "\\\""; break;
+        case '\'': out += "\\u0027"; break;
         case '\\': out += "\\\\"; break;
         case '\b': out += "\\b"; break;
         case '\f': out += "\\f"; break;
@@ -70,7 +71,15 @@ void SendToUI(const std::string& functionName, const std::string& jsonPayload) {
 class UIListener : public LoadListener {
 public:
     virtual void OnDOMReady(View* caller, uint64_t frame_id, bool is_main_frame, const String& url) override {
-        AppLogger::Log("INTERFACE: Pagina ativa -> " + std::string(url.utf8().data()));
+        const std::string pageUrl = std::string(url.utf8().data());
+        AppLogger::Log("INTERFACE: Pagina ativa -> " + pageUrl);
+
+        // Disable RS3 showcase overlay outside char select to avoid unnecessary GPU work on login/loading.
+        if (pageUrl.find("character_selection.html") == std::string::npos) {
+            RealSpace3::SceneManager::getInstance().setShowcaseViewport(0, 0, 0, 0);
+            RealSpace3::SceneManager::getInstance().setCreationPreviewVisible(false);
+        }
+
         JSContextRef ctx = caller->LockJSContext()->ctx();
         JSObjectRef global = JSContextGetGlobalObject(ctx);
         auto bind = [&](const char* name, JSObjectCallAsFunctionCallback cb) {
@@ -83,11 +92,18 @@ public:
             if (argc >= 2) {
                 std::string u = JSValueToStdString(ctx, argv[0]);
                 std::string p = JSValueToStdString(ctx, argv[1]);
+                AppLogger::Log("LOGIN: tentativa de autenticacao para '" + u + "'.");
+                AppLogger::LogNetwork("[UI] login() called email='" + u + "' password_len=" + std::to_string(p.size()));
                 Nakama::NakamaManager::getInstance().authenticateEmail(u, p, [](bool s, const std::string& e) {
                     if (s) {
+                        AppLogger::Log("LOGIN: autenticacao OK, abrindo character_selection.");
+                        AppLogger::LogNetwork("[UI] login result=ok -> loading character_selection.html");
                         UIManager::getInstance().loadURL(BuildFileUrl("/ui/character_selection.html"));
                     } else {
-                        std::string js = "if(window.setAuthStatus) setAuthStatus('ERRO: CREDENCIAIS INVALIDAS', false)";
+                        AppLogger::Log("LOGIN: falha de autenticacao -> " + e);
+                        AppLogger::LogNetwork("[UI] login result=error message='" + e + "'");
+                        const std::string safe = JsonEscape(e.empty() ? "falha desconhecida" : e);
+                        std::string js = "if(window.setAuthStatus) setAuthStatus('ERRO: " + safe + "', false)";
                         ((View*)UIManager::getInstance().getView())->EvaluateScript(js.c_str());
                     }
                 });
@@ -97,7 +113,11 @@ public:
 
         bind("list_characters", [](JSContextRef ctx, JSObjectRef f, JSObjectRef t, size_t argc, const JSValueRef argv[], JSValueRef* ex) -> JSValueRef {
             Nakama::NakamaManager::getInstance().listCharacters([](bool s, const std::string& p) {
-                if (s) SendToUI("onCharacterList", p);
+                if (s) {
+                    SendToUI("onCharacterList", p);
+                } else {
+                    SendToUI("onCharacterListError", "{\"message\":\"" + JsonEscape(p) + "\"}");
+                }
             });
             return JSValueMakeUndefined(ctx);
         });
@@ -208,6 +228,55 @@ public:
             if (argc < 1) return JSValueMakeUndefined(ctx);
             const bool visible = JSValueToBoolean(ctx, argv[0]);
             RealSpace3::SceneManager::getInstance().setCreationPreviewVisible(visible);
+            return JSValueMakeUndefined(ctx);
+        });
+
+        bind("set_preview_rect", [](JSContextRef ctx, JSObjectRef f, JSObjectRef t, size_t argc, const JSValueRef argv[], JSValueRef* ex) -> JSValueRef {
+            if (argc < 4) return JSValueMakeBoolean(ctx, false);
+            const int x = static_cast<int>(JSValueToNumber(ctx, argv[0], nullptr));
+            const int y = static_cast<int>(JSValueToNumber(ctx, argv[1], nullptr));
+            const int w = static_cast<int>(JSValueToNumber(ctx, argv[2], nullptr));
+            const int h = static_cast<int>(JSValueToNumber(ctx, argv[3], nullptr));
+            RealSpace3::SceneManager::getInstance().setShowcaseViewport(x, y, w, h);
+            return JSValueMakeBoolean(ctx, true);
+        });
+
+        bind("adjust_creation_camera", [](JSContextRef ctx, JSObjectRef f, JSObjectRef t, size_t argc, const JSValueRef argv[], JSValueRef* ex) -> JSValueRef {
+            if (argc < 3) return JSValueMakeBoolean(ctx, false);
+            const float yawDeltaDeg = static_cast<float>(JSValueToNumber(ctx, argv[0], nullptr));
+            const float pitchDeltaDeg = static_cast<float>(JSValueToNumber(ctx, argv[1], nullptr));
+            const float zoomDelta = static_cast<float>(JSValueToNumber(ctx, argv[2], nullptr));
+            const bool ok = RealSpace3::SceneManager::getInstance().adjustCreationCamera(yawDeltaDeg, pitchDeltaDeg, zoomDelta);
+            return JSValueMakeBoolean(ctx, ok);
+        });
+
+        bind("adjust_creation_character_yaw", [](JSContextRef ctx, JSObjectRef f, JSObjectRef t, size_t argc, const JSValueRef argv[], JSValueRef* ex) -> JSValueRef {
+            if (argc < 1) return JSValueMakeBoolean(ctx, false);
+            const float yawDeltaDeg = static_cast<float>(JSValueToNumber(ctx, argv[0], nullptr));
+            const bool ok = RealSpace3::SceneManager::getInstance().adjustCreationCharacterYaw(yawDeltaDeg);
+            return JSValueMakeBoolean(ctx, ok);
+        });
+
+        bind("set_creation_camera_pose", [](JSContextRef ctx, JSObjectRef f, JSObjectRef t, size_t argc, const JSValueRef argv[], JSValueRef* ex) -> JSValueRef {
+            if (argc < 5) return JSValueMakeBoolean(ctx, false);
+            const float yawDeg = static_cast<float>(JSValueToNumber(ctx, argv[0], nullptr));
+            const float pitchDeg = static_cast<float>(JSValueToNumber(ctx, argv[1], nullptr));
+            const float distance = static_cast<float>(JSValueToNumber(ctx, argv[2], nullptr));
+            const float focusHeight = static_cast<float>(JSValueToNumber(ctx, argv[3], nullptr));
+            const bool autoOrbit = JSValueToBoolean(ctx, argv[4]);
+            const bool ok = RealSpace3::SceneManager::getInstance().setCreationCameraPose(yawDeg, pitchDeg, distance, focusHeight, autoOrbit);
+            return JSValueMakeBoolean(ctx, ok);
+        });
+
+        bind("set_creation_camera_auto_orbit", [](JSContextRef ctx, JSObjectRef f, JSObjectRef t, size_t argc, const JSValueRef argv[], JSValueRef* ex) -> JSValueRef {
+            if (argc < 1) return JSValueMakeUndefined(ctx);
+            const bool enabled = JSValueToBoolean(ctx, argv[0]);
+            RealSpace3::SceneManager::getInstance().setCreationCameraAutoOrbit(enabled);
+            return JSValueMakeUndefined(ctx);
+        });
+
+        bind("reset_creation_camera", [](JSContextRef ctx, JSObjectRef f, JSObjectRef t, size_t argc, const JSValueRef argv[], JSValueRef* ex) -> JSValueRef {
+            RealSpace3::SceneManager::getInstance().resetCreationCamera();
             return JSValueMakeUndefined(ctx);
         });
 
@@ -533,14 +602,31 @@ void UIManager::resize(int width, int height) {
     if (_view && width > 0 && height > 0) {
         m_width = width; m_height = height;
         VIEW->Resize(width, height);
+        m_forceRepaintFrames = 0;
     }
 }
 
 void UIManager::update() { 
-    if (_renderer) ((Renderer*)_renderer)->Update(); 
     std::string urlToLoad;
     { std::lock_guard<std::mutex> lock(m_urlMutex); if (!m_pendingURL.empty()) { urlToLoad = m_pendingURL; m_pendingURL.clear(); } }
-    if (!urlToLoad.empty() && _view) VIEW->LoadURL(urlToLoad.c_str());
+    if (!urlToLoad.empty() && _view) {
+        VIEW->LoadURL(urlToLoad.c_str());
+        // Force a short repaint burst after navigation. This avoids stale loading frames
+        // that only refresh after an external resize event.
+        if (m_width > 0 && m_height > 0) {
+            VIEW->Resize(m_width, m_height);
+        }
+        m_forceRepaintFrames = 6;
+    }
+
+    if (_renderer) ((Renderer*)_renderer)->Update();
+
+    if (_view && m_forceRepaintFrames > 0) {
+        if (m_width > 0 && m_height > 0) {
+            VIEW->Resize(m_width, m_height);
+        }
+        --m_forceRepaintFrames;
+    }
 }
 
 void UIManager::render() { if (_renderer) ((Renderer*)_renderer)->Render(); }

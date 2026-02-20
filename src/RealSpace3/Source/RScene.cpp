@@ -20,12 +20,39 @@ namespace RealSpace3 {
 namespace {
 
 constexpr const char* kCharSelectSceneId = "char_creation_select";
+constexpr const char* kShowcasePlatformModelId = "props/car_display_platform";
 constexpr float kDefaultAlphaRef = 0.5f;
+constexpr float kCreationCameraPitchMin = -0.75f;
+constexpr float kCreationCameraPitchMax = 0.30f;
+constexpr float kCreationCameraDistanceMin = 160.0f;
+constexpr float kCreationCameraDistanceMax = 980.0f;
+constexpr float kCreationCameraLerpSpeed = 10.0f;
+constexpr float kCreationCameraAutoOrbitSpeed = 0.18f;
+constexpr float kCreationShowroomPitch = 0.17f;
+constexpr float kCreationShowroomDistance = 340.0f;
+constexpr float kCreationShowroomFocusHeight = 92.0f;
+constexpr float kPi = 3.14159265358979323846f;
+constexpr float kTwoPi = 6.28318530717958647692f;
 
 void SetError(std::string* outError, const std::string& message) {
     if (outError) {
         *outError = message;
     }
+}
+
+float ClampFloat(float v, float lo, float hi) {
+    return std::max(lo, std::min(v, hi));
+}
+
+float WrapAngle(float radians) {
+    while (radians > kPi) radians -= kTwoPi;
+    while (radians < -kPi) radians += kTwoPi;
+    return radians;
+}
+
+float LerpAngle(float from, float to, float t) {
+    const float delta = WrapAngle(to - from);
+    return WrapAngle(from + delta * t);
 }
 
 DirectX::XMFLOAT4X4 Identity4x4() {
@@ -402,6 +429,19 @@ RScene::RScene(ID3D11Device* device, ID3D11DeviceContext* context)
     m_stateManager = std::make_unique<RStateManager>(device, context);
     m_textureManager = std::make_unique<TextureManager>(device);
     m_characterAssembler = std::make_unique<CharacterAssembler>();
+    m_showcaseCharacter.debugName = "character";
+    m_showcaseCharacter.animate = true;
+    m_showcaseCharacter.skipCharacterNodeFilter = true;
+    m_showcaseCharacter.faceCamera = true;
+    m_showcaseCharacter.visible = false;
+
+    m_showcasePlatform.debugName = "platform";
+    m_showcasePlatform.animate = false;
+    m_showcasePlatform.skipCharacterNodeFilter = false;
+    m_showcasePlatform.faceCamera = false;
+    m_showcasePlatform.visible = false;
+    m_showcasePlatform.scale = 1.0f;
+    m_showcasePlatform.localOffset = { 0.0f, 0.0f, -6.0f };
 }
 
 RScene::~RScene() {
@@ -411,17 +451,51 @@ RScene::~RScene() {
 
 void RScene::LoadCharSelect() {
     ReleaseCreationPreviewResources();
-    m_creationPreview = CharacterVisualInstance{};
-    m_creationPreviewVisible = false;
-    m_creationPreviewGpuDirty = true;
+    m_showcaseCharacter.visual = CharacterVisualInstance{};
+    m_showcaseCharacter.visible = false;
+    m_showcaseCharacter.gpuDirty = true;
+    m_showcasePlatform.visual = CharacterVisualInstance{};
+    m_showcasePlatform.visible = false;
+    m_showcasePlatform.gpuDirty = true;
+    m_creationShowroomMode = true;
+    m_creationShowroomAnchor = { 0.0f, 0.0f, 0.0f };
+    m_creationCharacterYaw = 0.0f;
+    m_creationCameraRigReady = false;
+    m_creationCameraAutoOrbit = true;
 
     if (!LoadCharSelectPackage(kCharSelectSceneId)) {
         AppLogger::Log("[RS3] LoadCharSelect -> package load failed, falling back to LoadLobbyBasic.");
         LoadLobbyBasic();
+        m_creationShowroomMode = true;
+        m_creationShowroomAnchor = { 0.0f, 0.0f, 0.0f };
+        ResetCreationCameraRig();
         return;
     }
 
-    AppLogger::Log("[RS3] LoadCharSelect -> scene package active: char_creation_select.");
+    CharacterVisualRequest platformReq;
+    platformReq.baseModelId = kShowcasePlatformModelId;
+
+    CharacterVisualInstance platformBuilt;
+    std::string platformError;
+    if (!m_characterAssembler->BuildCharacterVisual(platformReq, platformBuilt, &platformError)) {
+        AppLogger::Log("[RS3] Showcase platform unavailable: " + platformError);
+        m_showcasePlatform.visual = CharacterVisualInstance{};
+        m_showcasePlatform.visible = false;
+        m_showcasePlatform.gpuDirty = true;
+    } else {
+        m_showcasePlatform.visual = std::move(platformBuilt);
+        m_showcasePlatform.visible = true;
+        m_showcasePlatform.gpuDirty = true;
+        std::string gpuError;
+        if (!EnsureShowcaseGpuResources(m_showcasePlatform, &gpuError)) {
+            AppLogger::Log("[RS3] Showcase platform GPU prepare failed: " + gpuError);
+            m_showcasePlatform.visible = false;
+        } else {
+            AppLogger::Log("[RS3] Showcase platform ready: model='" + std::string(kShowcasePlatformModelId) + "'.");
+        }
+    }
+
+    AppLogger::Log("[RS3] LoadCharSelect -> scene package active: char_creation_select (showroom mode enabled).");
 }
 
 bool RScene::LoadCharSelectPackage(const std::string& sceneId) {
@@ -457,9 +531,17 @@ void RScene::LoadLobbyBasic() {
     ReleaseMapResources();
     ReleaseCreationPreviewResources();
 
-    m_creationPreview = CharacterVisualInstance{};
-    m_creationPreviewVisible = false;
-    m_creationPreviewGpuDirty = true;
+    m_showcaseCharacter.visual = CharacterVisualInstance{};
+    m_showcaseCharacter.visible = false;
+    m_showcaseCharacter.gpuDirty = true;
+    m_showcasePlatform.visual = CharacterVisualInstance{};
+    m_showcasePlatform.visible = false;
+    m_showcasePlatform.gpuDirty = true;
+    m_creationShowroomMode = false;
+    m_creationShowroomAnchor = { 0.0f, 0.0f, 0.0f };
+    m_creationCharacterYaw = 0.0f;
+    m_creationCameraRigReady = false;
+    m_creationCameraAutoOrbit = true;
 
     m_cameraPos = { 0.0f, -800.0f, 220.0f };
     m_cameraDir = { 0.0f, 1.0f, -0.2f };
@@ -688,6 +770,9 @@ bool RScene::BuildMapGpuResources(const ScenePackageData& package, std::string* 
     m_hasSpawnPos = package.hasSpawn;
     m_spawnPos = package.spawnPos;
     m_spawnDir = package.spawnDir;
+    if (m_creationShowroomMode) {
+        m_creationShowroomAnchor = m_hasSpawnPos ? m_spawnPos : DirectX::XMFLOAT3{ 0.0f, 0.0f, 0.0f };
+    }
 
     m_fogEnabled = package.fogEnabled;
     m_fogMin = package.fogMin;
@@ -710,6 +795,7 @@ bool RScene::BuildMapGpuResources(const ScenePackageData& package, std::string* 
     }
 
     m_hasMapGeometry = true;
+    ResetCreationCameraRig();
     return true;
 }
 
@@ -721,7 +807,8 @@ void RScene::ReleaseMapResources() {
 }
 
 bool RScene::EnsureSkinPipeline() {
-    if (m_skinVS && m_skinPS && m_skinInputLayout && m_skinSampler && m_skinPerFrameCB && m_skinBonesCB) {
+    if (m_skinVS && m_skinPS && m_skinInputLayout && m_skinSampler && m_skinPerFrameCB && m_skinBonesCB &&
+        m_skinBsOpaque && m_skinBsAlphaBlend && m_skinBsAdditive && m_skinDsDepthWrite && m_skinDsDepthRead && m_skinDsNoDepth) {
         return true;
     }
 
@@ -843,6 +930,15 @@ bool RScene::EnsureSkinPipeline() {
         return false;
     }
 
+    D3D11_DEPTH_STENCIL_DESC dsOverlay = {};
+    dsOverlay.DepthEnable = FALSE;
+    dsOverlay.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+    dsOverlay.DepthFunc = D3D11_COMPARISON_ALWAYS;
+    if (FAILED(m_pd3dDevice->CreateDepthStencilState(&dsOverlay, &m_skinDsNoDepth))) {
+        AppLogger::Log("[RS3] EnsureSkinPipeline failed: CreateDepthStencilState(no-depth).");
+        return false;
+    }
+
     static bool logged = false;
     if (!logged) {
         AppLogger::Log("[RS3] EnsureSkinPipeline -> ready.");
@@ -852,21 +948,22 @@ bool RScene::EnsureSkinPipeline() {
     return true;
 }
 
-bool RScene::EnsureCreationPreviewGpuResources(std::string* outError) {
-    if (!m_creationPreviewGpuDirty) {
-        return !m_creationPreviewGpu.empty();
+bool RScene::EnsureShowcaseGpuResources(ShowcaseRenderable& renderable, std::string* outError) {
+    if (!renderable.gpuDirty) {
+        return !renderable.gpu.empty();
     }
 
-    ReleaseCreationPreviewResources();
+    renderable.gpu.clear();
+    renderable.gpuDirty = true;
 
-    if (!m_creationPreview.valid || m_creationPreview.packages.empty()) {
-        SetError(outError, "Creation preview is not valid or has no packages.");
+    if (!renderable.visual.valid || renderable.visual.packages.empty()) {
+        SetError(outError, "Showcase '" + renderable.debugName + "' is not valid or has no packages.");
         return false;
     }
 
-    m_creationPreviewGpu.reserve(m_creationPreview.packages.size());
+    renderable.gpu.reserve(renderable.visual.packages.size());
 
-    for (const auto& package : m_creationPreview.packages) {
+    for (const auto& package : renderable.visual.packages) {
         if (package.vertices.empty() || package.indices.empty() || package.submeshes.empty()) {
             continue;
         }
@@ -985,24 +1082,24 @@ bool RScene::EnsureCreationPreviewGpuResources(std::string* outError) {
                     "' nonIdentitySubmeshes=" + std::to_string(nonIdentityNodeTransformCount) +
                     "/" + std::to_string(runtime.submeshes.size()));
             }
-            m_creationPreviewGpu.push_back(std::move(runtime));
+            renderable.gpu.push_back(std::move(runtime));
         }
     }
 
-    if (m_creationPreviewGpu.empty()) {
-        SetError(outError, "Creation preview GPU cache is empty.");
+    if (renderable.gpu.empty()) {
+        SetError(outError, "Showcase '" + renderable.debugName + "' GPU cache is empty.");
         return false;
     }
 
-    m_creationPreviewGpuDirty = false;
+    renderable.gpuDirty = false;
 
     size_t totalSubmeshes = 0;
-    for (const auto& p : m_creationPreviewGpu) {
+    for (const auto& p : renderable.gpu) {
         totalSubmeshes += p.submeshes.size();
     }
 
     std::ostringstream oss;
-    oss << "[RS3] Creation preview GPU cache ready: packages=" << m_creationPreviewGpu.size()
+    oss << "[RS3] Showcase GPU cache ready: name='" << renderable.debugName << "' packages=" << renderable.gpu.size()
         << " submeshes=" << totalSubmeshes;
     AppLogger::Log(oss.str());
 
@@ -1010,41 +1107,247 @@ bool RScene::EnsureCreationPreviewGpuResources(std::string* outError) {
 }
 
 void RScene::ReleaseCreationPreviewResources() {
-    m_creationPreviewGpu.clear();
-    m_creationPreviewGpuDirty = true;
+    m_showcaseCharacter.gpu.clear();
+    m_showcaseCharacter.gpuDirty = true;
+    m_showcasePlatform.gpu.clear();
+    m_showcasePlatform.gpuDirty = true;
 }
 
-bool RScene::BuildPreviewWorldMatrix(DirectX::XMFLOAT4X4& outWorld) const {
-    DirectX::XMFLOAT3 pos = m_hasSpawnPos ? m_spawnPos : DirectX::XMFLOAT3{ 0.0f, 0.0f, 0.0f };
-    DirectX::XMFLOAT3 dir = m_hasSpawnPos ? m_spawnDir : DirectX::XMFLOAT3{ 0.0f, 1.0f, 0.0f };
+DirectX::XMFLOAT3 RScene::GetCreationCameraFocus() const {
+    DirectX::XMFLOAT3 focus = m_creationShowroomMode
+        ? m_creationShowroomAnchor
+        : (m_hasSpawnPos ? m_spawnPos : DirectX::XMFLOAT3{ 0.0f, 0.0f, 0.0f });
+    focus.z += m_creationCameraFocusHeight;
+    return focus;
+}
 
-    // Prefer map spawn direction for OGZ parity, but keep auto-flip to avoid back-facing.
-    DirectX::XMVECTOR forward = DirectX::XMVectorSet(dir.x, dir.y, 0.0f, 0.0f);
-    DirectX::XMVECTOR toCamera = DirectX::XMVectorSet(
-        m_cameraPos.x - pos.x,
-        m_cameraPos.y - pos.y,
-        0.0f,
+void RScene::ResetCreationCameraRig() {
+    if (m_creationShowroomMode) {
+        m_creationCameraYaw = 0.0f;
+        m_creationCameraPitch = ClampFloat(kCreationShowroomPitch, kCreationCameraPitchMin, kCreationCameraPitchMax);
+        m_creationCameraDistance = ClampFloat(kCreationShowroomDistance, kCreationCameraDistanceMin, kCreationCameraDistanceMax);
+        m_creationCameraFocusHeight = kCreationShowroomFocusHeight;
+
+        m_creationCameraYawTarget = m_creationCameraYaw;
+        m_creationCameraPitchTarget = m_creationCameraPitch;
+        m_creationCameraDistanceTarget = m_creationCameraDistance;
+        m_creationCameraFocusHeightTarget = m_creationCameraFocusHeight;
+        m_creationCameraRigReady = true;
+        UpdateCreationCameraFromRig();
+        return;
+    }
+
+    const float defaultDistance = 360.0f;
+    const float defaultPitch = 0.16f;
+    const float defaultFocusHeight = 90.0f;
+
+    const DirectX::XMFLOAT3 focusBase = m_hasSpawnPos ? m_spawnPos : DirectX::XMFLOAT3{ 0.0f, 0.0f, 0.0f };
+    const DirectX::XMFLOAT3 focus = { focusBase.x, focusBase.y, focusBase.z + defaultFocusHeight };
+
+    DirectX::XMVECTOR offset = DirectX::XMVectorSet(
+        m_cameraPos.x - focus.x,
+        m_cameraPos.y - focus.y,
+        m_cameraPos.z - focus.z,
         0.0f);
-    if (DirectX::XMVectorGetX(DirectX::XMVector3LengthSq(forward)) < 0.000001f) {
-        forward = toCamera;
-    }
-    if (DirectX::XMVectorGetX(DirectX::XMVector3LengthSq(forward)) < 0.000001f) {
-        forward = DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+
+    const float offsetLenSq = DirectX::XMVectorGetX(DirectX::XMVector3LengthSq(offset));
+    if (offsetLenSq < 1.0f) {
+        offset = DirectX::XMVectorSet(0.0f, -defaultDistance, defaultDistance * std::sin(defaultPitch), 0.0f);
     }
 
-    if (DirectX::XMVectorGetX(DirectX::XMVector3LengthSq(toCamera)) >= 0.000001f) {
-        const DirectX::XMVECTOR forwardN = DirectX::XMVector3Normalize(forward);
-        const DirectX::XMVECTOR toCameraN = DirectX::XMVector3Normalize(toCamera);
-        if (DirectX::XMVectorGetX(DirectX::XMVector3Dot(forwardN, toCameraN)) < 0.0f) {
+    DirectX::XMFLOAT3 offF = {};
+    DirectX::XMStoreFloat3(&offF, offset);
+    const float horizontal = std::max(0.001f, std::sqrt(offF.x * offF.x + offF.y * offF.y));
+    const float distance = std::max(0.001f, std::sqrt(offF.x * offF.x + offF.y * offF.y + offF.z * offF.z));
+    const float yaw = std::atan2(offF.x, -offF.y);
+    const float pitch = std::atan2(offF.z, horizontal);
+
+    m_creationCameraYaw = WrapAngle(yaw);
+    m_creationCameraPitch = ClampFloat(pitch, kCreationCameraPitchMin, kCreationCameraPitchMax);
+    m_creationCameraDistance = ClampFloat(distance, kCreationCameraDistanceMin, kCreationCameraDistanceMax);
+    m_creationCameraFocusHeight = defaultFocusHeight;
+
+    m_creationCameraYawTarget = m_creationCameraYaw;
+    m_creationCameraPitchTarget = m_creationCameraPitch;
+    m_creationCameraDistanceTarget = m_creationCameraDistance;
+    m_creationCameraFocusHeightTarget = m_creationCameraFocusHeight;
+    m_creationCameraRigReady = true;
+
+    UpdateCreationCameraFromRig();
+}
+
+void RScene::UpdateCreationCameraFromRig() {
+    if (!m_creationCameraRigReady) {
+        return;
+    }
+
+    const DirectX::XMFLOAT3 focus = GetCreationCameraFocus();
+    const float cosPitch = std::cos(m_creationCameraPitch);
+    const float sinPitch = std::sin(m_creationCameraPitch);
+    const float sinYaw = std::sin(m_creationCameraYaw);
+    const float cosYaw = std::cos(m_creationCameraYaw);
+
+    const DirectX::XMFLOAT3 offset = {
+        sinYaw * m_creationCameraDistance * cosPitch,
+        -cosYaw * m_creationCameraDistance * cosPitch,
+        sinPitch * m_creationCameraDistance
+    };
+
+    m_cameraPos = { focus.x + offset.x, focus.y + offset.y, focus.z + offset.z };
+
+    DirectX::XMVECTOR dir = DirectX::XMVectorSet(
+        focus.x - m_cameraPos.x,
+        focus.y - m_cameraPos.y,
+        focus.z - m_cameraPos.z,
+        0.0f);
+    if (DirectX::XMVectorGetX(DirectX::XMVector3LengthSq(dir)) < 0.000001f) {
+        dir = DirectX::XMVectorSet(0.0f, 1.0f, -0.2f, 0.0f);
+    } else {
+        dir = DirectX::XMVector3Normalize(dir);
+    }
+
+    DirectX::XMStoreFloat3(&m_cameraDir, dir);
+}
+
+bool RScene::AdjustCreationCamera(float yawDeltaDeg, float pitchDeltaDeg, float zoomDelta) {
+    if (!m_showcaseCharacter.visual.valid && !m_creationCameraRigReady) {
+        return false;
+    }
+
+    if (!m_creationCameraRigReady) {
+        ResetCreationCameraRig();
+    }
+
+    m_creationCameraYawTarget = WrapAngle(m_creationCameraYawTarget + DirectX::XMConvertToRadians(yawDeltaDeg));
+    m_creationCameraPitchTarget = ClampFloat(
+        m_creationCameraPitchTarget + DirectX::XMConvertToRadians(pitchDeltaDeg),
+        kCreationCameraPitchMin,
+        kCreationCameraPitchMax);
+    m_creationCameraDistanceTarget = ClampFloat(
+        m_creationCameraDistanceTarget + zoomDelta,
+        kCreationCameraDistanceMin,
+        kCreationCameraDistanceMax);
+    m_creationCameraAutoOrbit = false;
+    return true;
+}
+
+bool RScene::AdjustCreationCharacterYaw(float yawDeltaDeg) {
+    if (!m_showcaseCharacter.visual.valid && !m_creationCameraRigReady) {
+        return false;
+    }
+
+    m_creationCharacterYaw = WrapAngle(m_creationCharacterYaw + DirectX::XMConvertToRadians(yawDeltaDeg));
+    return true;
+}
+
+bool RScene::SetCreationCameraPose(float yawDeg, float pitchDeg, float distance, float focusHeight, bool autoOrbit) {
+    if (!m_showcaseCharacter.visual.valid && !m_creationCameraRigReady) {
+        return false;
+    }
+
+    if (!m_creationCameraRigReady) {
+        ResetCreationCameraRig();
+    }
+
+    m_creationCameraYawTarget = WrapAngle(DirectX::XMConvertToRadians(yawDeg));
+    m_creationCameraPitchTarget = ClampFloat(
+        DirectX::XMConvertToRadians(pitchDeg),
+        kCreationCameraPitchMin,
+        kCreationCameraPitchMax);
+    m_creationCameraDistanceTarget = ClampFloat(
+        distance,
+        kCreationCameraDistanceMin,
+        kCreationCameraDistanceMax);
+    m_creationCameraFocusHeightTarget = ClampFloat(focusHeight, 20.0f, 260.0f);
+    m_creationCameraAutoOrbit = autoOrbit;
+    return true;
+}
+
+void RScene::SetCreationCameraAutoOrbit(bool enabled) {
+    m_creationCameraAutoOrbit = enabled;
+}
+
+void RScene::ResetCreationCamera() {
+    ResetCreationCameraRig();
+    m_creationCharacterYaw = 0.0f;
+    m_creationCameraAutoOrbit = true;
+}
+
+bool RScene::BuildShowcaseWorldMatrix(const ShowcaseRenderable& renderable, bool applyCreationOrientation, DirectX::XMFLOAT4X4& outWorld) const {
+    DirectX::XMFLOAT3 pos = m_creationShowroomMode
+        ? m_creationShowroomAnchor
+        : (m_hasSpawnPos ? m_spawnPos : DirectX::XMFLOAT3{ 0.0f, 0.0f, 0.0f });
+    pos.x += renderable.localOffset.x;
+    pos.y += renderable.localOffset.y;
+    pos.z += renderable.localOffset.z;
+
+    DirectX::XMVECTOR forward = DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+
+    if (applyCreationOrientation || renderable.faceCamera) {
+        if (m_creationShowroomMode) {
+            // Showroom mode keeps the character decoupled from map spawn/orientation.
+            DirectX::XMVECTOR toCamera = DirectX::XMVectorSet(
+                m_cameraPos.x - pos.x,
+                m_cameraPos.y - pos.y,
+                0.0f,
+                0.0f);
+            if (DirectX::XMVectorGetX(DirectX::XMVector3LengthSq(toCamera)) < 0.000001f) {
+                toCamera = DirectX::XMVectorSet(0.0f, -1.0f, 0.0f, 0.0f);
+            } else {
+                toCamera = DirectX::XMVector3Normalize(toCamera);
+            }
+
+            // Converted character packages have opposite local forward.
+            forward = DirectX::XMVectorNegate(toCamera);
+            if (std::abs(m_creationCharacterYaw) > 0.00001f) {
+                const DirectX::XMMATRIX yawRot = DirectX::XMMatrixRotationZ(m_creationCharacterYaw);
+                forward = DirectX::XMVector3Normalize(DirectX::XMVector3TransformNormal(forward, yawRot));
+            }
             forward = DirectX::XMVectorNegate(forward);
+        } else {
+            DirectX::XMFLOAT3 dir = m_hasSpawnPos ? m_spawnDir : DirectX::XMFLOAT3{ 0.0f, 1.0f, 0.0f };
+
+            // Prefer map spawn direction for OGZ parity, but keep auto-flip to avoid back-facing.
+            forward = DirectX::XMVectorSet(dir.x, dir.y, 0.0f, 0.0f);
+            DirectX::XMVECTOR toCamera = DirectX::XMVectorSet(
+                m_cameraPos.x - pos.x,
+                m_cameraPos.y - pos.y,
+                0.0f,
+                0.0f);
+            if (DirectX::XMVectorGetX(DirectX::XMVector3LengthSq(forward)) < 0.000001f) {
+                forward = toCamera;
+            }
+            if (DirectX::XMVectorGetX(DirectX::XMVector3LengthSq(forward)) < 0.000001f) {
+                forward = DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+            }
+
+            if (DirectX::XMVectorGetX(DirectX::XMVector3LengthSq(toCamera)) >= 0.000001f) {
+                const DirectX::XMVECTOR forwardN = DirectX::XMVector3Normalize(forward);
+                const DirectX::XMVECTOR toCameraN = DirectX::XMVector3Normalize(toCamera);
+                if (DirectX::XMVectorGetX(DirectX::XMVector3Dot(forwardN, toCameraN)) < 0.0f) {
+                    forward = DirectX::XMVectorNegate(forward);
+                }
+            }
+
+            forward = DirectX::XMVector3Normalize(forward);
+
+            // Converted character packages are authored with opposite local forward
+            // versus map spawn forward; compensate here for char-select preview.
+            forward = DirectX::XMVectorNegate(forward);
+
+            if (std::abs(m_creationCharacterYaw) > 0.00001f) {
+                const DirectX::XMMATRIX yawRot = DirectX::XMMatrixRotationZ(m_creationCharacterYaw);
+                forward = DirectX::XMVector3Normalize(DirectX::XMVector3TransformNormal(forward, yawRot));
+            }
         }
+    } else {
+        const float yaw = DirectX::XMConvertToRadians(renderable.yawOffsetDeg);
+        const DirectX::XMMATRIX yawRot = DirectX::XMMatrixRotationZ(yaw);
+        forward = DirectX::XMVector3Normalize(
+            DirectX::XMVector3TransformNormal(DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f), yawRot));
     }
 
     forward = DirectX::XMVector3Normalize(forward);
-
-    // Converted character packages are authored with opposite local forward
-    // versus map spawn forward; compensate here for char-select preview.
-    forward = DirectX::XMVectorNegate(forward);
 
     DirectX::XMVECTOR up = DirectX::XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f);
     DirectX::XMVECTOR right = DirectX::XMVector3Cross(up, forward);
@@ -1052,8 +1355,12 @@ bool RScene::BuildPreviewWorldMatrix(DirectX::XMFLOAT4X4& outWorld) const {
         right = DirectX::XMVectorSet(1.0f, 0.0f, 0.0f, 0.0f);
     }
     right = DirectX::XMVector3Normalize(right);
-
     up = DirectX::XMVector3Normalize(DirectX::XMVector3Cross(forward, right));
+
+    const float safeScale = (renderable.scale <= 0.0001f) ? 1.0f : renderable.scale;
+    right = DirectX::XMVectorScale(right, safeScale);
+    up = DirectX::XMVectorScale(up, safeScale);
+    forward = DirectX::XMVectorScale(forward, safeScale);
 
     DirectX::XMFLOAT3 rightF;
     DirectX::XMFLOAT3 upF;
@@ -1081,17 +1388,40 @@ void RScene::Update(float deltaTime) {
         return;
     }
 
-    if (m_creationPreviewVisible && m_creationPreview.valid) {
-        m_creationPreview.animation.Update(deltaTime);
+    if (m_creationCameraRigReady) {
+        if (m_creationCameraAutoOrbit && m_showcaseCharacter.visible) {
+            m_creationCameraYawTarget = WrapAngle(m_creationCameraYawTarget + kCreationCameraAutoOrbitSpeed * deltaTime);
+        }
+
+        const float t = ClampFloat(1.0f - std::exp(-kCreationCameraLerpSpeed * deltaTime), 0.0f, 1.0f);
+        m_creationCameraYaw = LerpAngle(m_creationCameraYaw, m_creationCameraYawTarget, t);
+        m_creationCameraPitch += (m_creationCameraPitchTarget - m_creationCameraPitch) * t;
+        m_creationCameraDistance += (m_creationCameraDistanceTarget - m_creationCameraDistance) * t;
+        m_creationCameraFocusHeight += (m_creationCameraFocusHeightTarget - m_creationCameraFocusHeight) * t;
+
+        UpdateCreationCameraFromRig();
+    }
+
+    if (m_showcaseCharacter.visible && m_showcaseCharacter.visual.valid && m_showcaseCharacter.animate) {
+        m_showcaseCharacter.visual.animation.Update(deltaTime);
+    }
+    if (m_showcasePlatform.visible && m_showcasePlatform.visual.valid && m_showcasePlatform.animate) {
+        m_showcasePlatform.visual.animation.Update(deltaTime);
     }
 }
 
-void RScene::Draw(ID3D11DeviceContext* context, DirectX::FXMMATRIX viewProj) {
+void RScene::DrawWorld(ID3D11DeviceContext* context, DirectX::FXMMATRIX viewProj) {
     if (!context) {
         return;
     }
 
     m_stateManager->ClearSRVs();
+
+    // Char select showcase mode: hide world map and render only showcase layers.
+    if (m_creationShowroomMode) {
+        m_stateManager->Reset();
+        return;
+    }
 
     if (m_hasMapGeometry && m_mapVB && m_mapIB && EnsureMapPipeline()) {
         const UINT stride = sizeof(MapGpuVertex);
@@ -1141,120 +1471,199 @@ void RScene::Draw(ID3D11DeviceContext* context, DirectX::FXMMATRIX viewProj) {
         drawPass(3, m_bsAdditive.Get(), m_dsDepthRead.Get());
     }
 
-    if (m_creationPreviewVisible && m_creationPreview.valid && EnsureSkinPipeline()) {
-        std::string gpuError;
-        if (!EnsureCreationPreviewGpuResources(&gpuError)) {
-            AppLogger::Log("[RS3] Draw preview skipped: " + gpuError);
-        } else {
-            DirectX::XMFLOAT4X4 world;
-            BuildPreviewWorldMatrix(world);
+    m_stateManager->Reset();
+}
 
-            std::vector<DirectX::XMFLOAT4X4> animatedMatrices;
-            if (!m_creationPreview.animation.BuildSkinMatrices(animatedMatrices) && !m_creationPreview.packages.empty()) {
-                BuildBindPoseSkinMatrices(m_creationPreview.packages.front(), animatedMatrices);
+void RScene::DrawShowcase(ID3D11DeviceContext* context, DirectX::FXMMATRIX viewProj, bool forceNoDepthTest) {
+    if (!context) {
+        return;
+    }
+
+    m_stateManager->ClearSRVs();
+
+    // Overlay showcase only runs when UI provides an explicit stage rect.
+    if (!m_showcaseViewportEnabled) {
+        m_stateManager->Reset();
+        return;
+    }
+
+    if (!EnsureSkinPipeline()) {
+        m_stateManager->Reset();
+        return;
+    }
+
+    D3D11_VIEWPORT savedViewports[D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE] = {};
+    UINT savedViewportCount = D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE;
+    context->RSGetViewports(&savedViewportCount, savedViewports);
+
+    if (m_showcaseViewportEnabled) {
+        context->RSSetViewports(1, &m_showcaseViewport);
+    }
+
+    auto drawRenderable = [&](ShowcaseRenderable& renderable, bool applyCreationOrientation) -> size_t {
+        if (!renderable.visible || !renderable.visual.valid) {
+            return 0;
+        }
+
+        std::string gpuError;
+        if (!EnsureShowcaseGpuResources(renderable, &gpuError)) {
+            AppLogger::Log("[RS3] Draw showcase skipped: name='" + renderable.debugName + "' reason='" + gpuError + "'");
+            return 0;
+        }
+
+        DirectX::XMFLOAT4X4 world;
+        BuildShowcaseWorldMatrix(renderable, applyCreationOrientation, world);
+
+        std::vector<DirectX::XMFLOAT4X4> animatedMatrices;
+        if (renderable.animate && !renderable.visual.animation.BuildSkinMatrices(animatedMatrices) &&
+            !renderable.visual.packages.empty()) {
+            BuildBindPoseSkinMatrices(renderable.visual.packages.front(), animatedMatrices);
+        }
+
+        size_t drawCount = 0;
+        ID3D11DepthStencilState* depthOpaque = forceNoDepthTest ? m_skinDsNoDepth.Get() : m_skinDsDepthWrite.Get();
+        ID3D11DepthStencilState* depthAlpha = forceNoDepthTest ? m_skinDsNoDepth.Get() : m_skinDsDepthRead.Get();
+
+        for (size_t packageIndex = 0; packageIndex < renderable.gpu.size(); ++packageIndex) {
+            auto& runtime = renderable.gpu[packageIndex];
+            const auto& sourcePackage = renderable.visual.packages[packageIndex];
+
+            std::vector<DirectX::XMFLOAT4X4> skinMatrices;
+            if (renderable.animate && packageIndex == 0 && !animatedMatrices.empty()) {
+                skinMatrices = animatedMatrices;
+            } else {
+                BuildBindPoseSkinMatrices(sourcePackage, skinMatrices);
             }
 
-            size_t drawCount = 0;
+            const UINT stride = sizeof(SkinGpuVertex);
+            const UINT offset = 0;
+            context->IASetInputLayout(m_skinInputLayout.Get());
+            context->IASetVertexBuffers(0, 1, runtime.vb.GetAddressOf(), &stride, &offset);
+            context->IASetIndexBuffer(runtime.ib.Get(), DXGI_FORMAT_R32_UINT, 0);
+            context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-            for (size_t packageIndex = 0; packageIndex < m_creationPreviewGpu.size(); ++packageIndex) {
-                auto& runtime = m_creationPreviewGpu[packageIndex];
-                const auto& sourcePackage = m_creationPreview.packages[packageIndex];
+            context->VSSetShader(m_skinVS.Get(), nullptr, 0);
+            context->PSSetShader(m_skinPS.Get(), nullptr, 0);
+            context->VSSetConstantBuffers(0, 1, m_skinPerFrameCB.GetAddressOf());
+            context->VSSetConstantBuffers(1, 1, m_skinBonesCB.GetAddressOf());
+            context->PSSetConstantBuffers(0, 1, m_skinPerFrameCB.GetAddressOf());
+            context->PSSetSamplers(0, 1, m_skinSampler.GetAddressOf());
 
-                std::vector<DirectX::XMFLOAT4X4> skinMatrices;
-                if (packageIndex == 0 && !animatedMatrices.empty()) {
-                    skinMatrices = animatedMatrices;
-                } else {
-                    BuildBindPoseSkinMatrices(sourcePackage, skinMatrices);
-                }
+            const auto drawSkinPass = [&](int passId, ID3D11BlendState* blendState, ID3D11DepthStencilState* depthState) {
+                const float blendFactor[4] = { 0, 0, 0, 0 };
+                context->OMSetBlendState(blendState, blendFactor, 0xffffffff);
+                context->OMSetDepthStencilState(depthState, 0);
 
-                const UINT stride = sizeof(SkinGpuVertex);
-                const UINT offset = 0;
-                context->IASetInputLayout(m_skinInputLayout.Get());
-                context->IASetVertexBuffers(0, 1, runtime.vb.GetAddressOf(), &stride, &offset);
-                context->IASetIndexBuffer(runtime.ib.Get(), DXGI_FORMAT_R32_UINT, 0);
-                context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-                context->VSSetShader(m_skinVS.Get(), nullptr, 0);
-                context->PSSetShader(m_skinPS.Get(), nullptr, 0);
-                context->VSSetConstantBuffers(0, 1, m_skinPerFrameCB.GetAddressOf());
-                context->VSSetConstantBuffers(1, 1, m_skinBonesCB.GetAddressOf());
-                context->PSSetConstantBuffers(0, 1, m_skinPerFrameCB.GetAddressOf());
-                context->PSSetSamplers(0, 1, m_skinSampler.GetAddressOf());
-
-                const auto drawSkinPass = [&](int passId, ID3D11BlendState* blendState, ID3D11DepthStencilState* depthState) {
-                    const float blendFactor[4] = { 0, 0, 0, 0 };
-                    context->OMSetBlendState(blendState, blendFactor, 0xffffffff);
-                    context->OMSetDepthStencilState(depthState, 0);
-
-                    for (const auto& sub : runtime.submeshes) {
+                for (const auto& sub : runtime.submeshes) {
+                    if (renderable.skipCharacterNodeFilter) {
                         const std::string nodeName = (sub.nodeIndex < sourcePackage.bones.size())
                             ? sourcePackage.bones[sub.nodeIndex].name
                             : std::string();
                         if (ShouldSkipCharacterPreviewNode(nodeName)) {
                             continue;
                         }
-
-                        if (ClassifyPass(sub.legacyFlags, sub.alphaMode) != passId) {
-                            continue;
-                        }
-
-                        // OGZ order for skinned character parts is: v * partRef * invBind * current.
-                        // We fold `partRef` (sub.nodeTransform) into each bone matrix per submesh.
-                        SkinBonesCB bonesCB = {};
-                        for (auto& m : bonesCB.bones) {
-                            m = Identity4x4();
-                        }
-                        const size_t copyCount = std::min<size_t>(skinMatrices.size(), MAX_BONES);
-                        const DirectX::XMMATRIX subRef = DirectX::XMLoadFloat4x4(&sub.nodeTransform);
-                        for (size_t i = 0; i < copyCount; ++i) {
-                            const DirectX::XMMATRIX skin = DirectX::XMLoadFloat4x4(&skinMatrices[i]);
-                            const DirectX::XMMATRIX combined = DirectX::XMMatrixMultiply(subRef, skin);
-                            DirectX::XMStoreFloat4x4(&bonesCB.bones[i], combined);
-                        }
-                        context->UpdateSubresource(m_skinBonesCB.Get(), 0, nullptr, &bonesCB, 0, 0);
-
-                        SkinPerFrameCB cb = {};
-                        cb.world = world;
-                        DirectX::XMStoreFloat4x4(&cb.viewProj, viewProj);
-                        cb.lightDirIntensity = { m_sceneLightDir.x, m_sceneLightDir.y, m_sceneLightDir.z, m_sceneLightIntensity };
-                        cb.lightColorFogMin = { m_sceneLightColor.x, m_sceneLightColor.y, m_sceneLightColor.z, m_fogMin };
-                        cb.fogColorFogMax = { m_fogColor.x, m_fogColor.y, m_fogColor.z, m_fogMax };
-                        cb.cameraPosFogEnabled = { m_cameraPos.x, m_cameraPos.y, m_cameraPos.z, m_fogEnabled ? 1.0f : 0.0f };
-                        cb.renderParams = { static_cast<float>(passId), kDefaultAlphaRef, 0.0f, 0.0f };
-
-                        context->UpdateSubresource(m_skinPerFrameCB.Get(), 0, nullptr, &cb, 0, 0);
-
-                        ID3D11ShaderResourceView* srv = sub.diffuseSRV ? sub.diffuseSRV.Get() : m_textureManager->GetWhiteTexture().Get();
-                        context->PSSetShaderResources(0, 1, &srv);
-                        context->DrawIndexed(sub.indexCount, sub.indexStart, 0);
-                        ++drawCount;
                     }
-                };
 
-                m_stateManager->ApplyPass(RenderPass::Skin_Base);
-                drawSkinPass(0, m_skinBsOpaque.Get(), m_skinDsDepthWrite.Get());
-                drawSkinPass(1, m_skinBsOpaque.Get(), m_skinDsDepthWrite.Get());
-                drawSkinPass(2, m_skinBsAlphaBlend.Get(), m_skinDsDepthRead.Get());
-                drawSkinPass(3, m_skinBsAdditive.Get(), m_skinDsDepthRead.Get());
-            }
+                    if (ClassifyPass(sub.legacyFlags, sub.alphaMode) != passId) {
+                        continue;
+                    }
 
-            static int logTick = 0;
-            if ((logTick++ % 180) == 0) {
-                const RS3AnimationClip* clip = m_creationPreview.animation.GetCurrentClip();
-                const std::string clipName = clip ? clip->name : std::string("<none>");
-                AppLogger::Log("[RS3] Preview draw stats: drawCalls=" + std::to_string(drawCount) +
-                    " clip='" + clipName + "' t=" + std::to_string(m_creationPreview.animation.GetCurrentTimeSeconds()));
-            }
+                    SkinBonesCB bonesCB = {};
+                    for (auto& m : bonesCB.bones) {
+                        m = Identity4x4();
+                    }
+                    const size_t copyCount = std::min<size_t>(skinMatrices.size(), MAX_BONES);
+                    const DirectX::XMMATRIX subRef = DirectX::XMLoadFloat4x4(&sub.nodeTransform);
+                    for (size_t i = 0; i < copyCount; ++i) {
+                        const DirectX::XMMATRIX skin = DirectX::XMLoadFloat4x4(&skinMatrices[i]);
+                        const DirectX::XMMATRIX combined = DirectX::XMMatrixMultiply(subRef, skin);
+                        DirectX::XMStoreFloat4x4(&bonesCB.bones[i], combined);
+                    }
+                    context->UpdateSubresource(m_skinBonesCB.Get(), 0, nullptr, &bonesCB, 0, 0);
+
+                    SkinPerFrameCB cb = {};
+                    cb.world = world;
+                    DirectX::XMStoreFloat4x4(&cb.viewProj, viewProj);
+                    cb.lightDirIntensity = { m_sceneLightDir.x, m_sceneLightDir.y, m_sceneLightDir.z, m_sceneLightIntensity };
+                    cb.lightColorFogMin = { m_sceneLightColor.x, m_sceneLightColor.y, m_sceneLightColor.z, m_fogMin };
+                    cb.fogColorFogMax = { m_fogColor.x, m_fogColor.y, m_fogColor.z, m_fogMax };
+                    cb.cameraPosFogEnabled = { m_cameraPos.x, m_cameraPos.y, m_cameraPos.z, m_fogEnabled ? 1.0f : 0.0f };
+                    cb.renderParams = { static_cast<float>(passId), kDefaultAlphaRef, 0.0f, 0.0f };
+
+                    context->UpdateSubresource(m_skinPerFrameCB.Get(), 0, nullptr, &cb, 0, 0);
+
+                    ID3D11ShaderResourceView* srv = sub.diffuseSRV ? sub.diffuseSRV.Get() : m_textureManager->GetWhiteTexture().Get();
+                    context->PSSetShaderResources(0, 1, &srv);
+                    context->DrawIndexed(sub.indexCount, sub.indexStart, 0);
+                    ++drawCount;
+                }
+            };
+
+            m_stateManager->ApplyPass(RenderPass::Skin_Base);
+            drawSkinPass(0, m_skinBsOpaque.Get(), depthOpaque);
+            drawSkinPass(1, m_skinBsOpaque.Get(), depthOpaque);
+            drawSkinPass(2, m_skinBsAlphaBlend.Get(), depthAlpha);
+            drawSkinPass(3, m_skinBsAdditive.Get(), depthAlpha);
         }
+
+        return drawCount;
+    };
+
+    const size_t platformDrawCount = drawRenderable(m_showcasePlatform, false);
+    const size_t characterDrawCount = drawRenderable(m_showcaseCharacter, true);
+
+    static int logTick = 0;
+    if ((logTick++ % 180) == 0) {
+        const RS3AnimationClip* clip = m_showcaseCharacter.visual.animation.GetCurrentClip();
+        const std::string clipName = clip ? clip->name : std::string("<none>");
+        AppLogger::Log("[RS3] Showcase draw stats: platform_calls=" + std::to_string(platformDrawCount) +
+            " character_calls=" + std::to_string(characterDrawCount) +
+            " viewport=" + std::to_string(static_cast<int>(m_showcaseViewport.TopLeftX)) + "," +
+            std::to_string(static_cast<int>(m_showcaseViewport.TopLeftY)) + "," +
+            std::to_string(static_cast<int>(m_showcaseViewport.Width)) + "x" +
+            std::to_string(static_cast<int>(m_showcaseViewport.Height)) +
+            " clip='" + clipName + "' t=" + std::to_string(m_showcaseCharacter.visual.animation.GetCurrentTimeSeconds()));
+    }
+
+    if (m_showcaseViewportEnabled && savedViewportCount > 0) {
+        context->RSSetViewports(savedViewportCount, savedViewports);
     }
 
     m_stateManager->Reset();
 }
 
+void RScene::Draw(ID3D11DeviceContext* context, DirectX::FXMMATRIX viewProj) {
+    DrawWorld(context, viewProj);
+    DrawShowcase(context, viewProj, false);
+}
+
+void RScene::SetShowcaseViewportPixels(int x, int y, int width, int height) {
+    if (width <= 1 || height <= 1) {
+        m_showcaseViewportEnabled = false;
+        return;
+    }
+
+    m_showcaseViewportEnabled = true;
+    m_showcaseViewport.TopLeftX = static_cast<float>(std::max(0, x));
+    m_showcaseViewport.TopLeftY = static_cast<float>(std::max(0, y));
+    m_showcaseViewport.Width = static_cast<float>(std::max(1, width));
+    m_showcaseViewport.Height = static_cast<float>(std::max(1, height));
+    m_showcaseViewport.MinDepth = 0.0f;
+    m_showcaseViewport.MaxDepth = 1.0f;
+
+    static int rectLogTick = 0;
+    if ((rectLogTick++ % 120) == 0) {
+        AppLogger::Log("[RS3] Showcase viewport updated: x=" + std::to_string(static_cast<int>(m_showcaseViewport.TopLeftX)) +
+            " y=" + std::to_string(static_cast<int>(m_showcaseViewport.TopLeftY)) +
+            " w=" + std::to_string(static_cast<int>(m_showcaseViewport.Width)) +
+            " h=" + std::to_string(static_cast<int>(m_showcaseViewport.Height)));
+    }
+}
+
 bool RScene::GetPreferredCamera(DirectX::XMFLOAT3& outPos, DirectX::XMFLOAT3& outDir) const {
     outPos = m_cameraPos;
     outDir = m_cameraDir;
-    return m_hasMapGeometry;
+    return m_hasMapGeometry || m_creationShowroomMode;
 }
 
 bool RScene::SetCreationPreview(int sex, int face, int preset, int hair) {
@@ -1272,9 +1681,9 @@ bool RScene::SetCreationPreview(int sex, int face, int preset, int hair) {
     CharacterVisualInstance built;
     std::string error;
     if (!m_characterAssembler->BuildCharacterVisual(req, built, &error)) {
-        m_creationPreview = CharacterVisualInstance{};
-        m_creationPreviewVisible = false;
-        m_creationPreviewGpuDirty = true;
+        m_showcaseCharacter.visual = CharacterVisualInstance{};
+        m_showcaseCharacter.visible = false;
+        m_showcaseCharacter.gpuDirty = true;
         ReleaseCreationPreviewResources();
 
         AppLogger::Log("[RS3] SetCreationPreview failed for sex=" + std::to_string(sex) + ": " + error);
@@ -1306,12 +1715,17 @@ bool RScene::SetCreationPreview(int sex, int face, int preset, int hair) {
         }
     }
 
-    m_creationPreview = std::move(built);
-    m_creationPreviewVisible = true;
-    m_creationPreviewGpuDirty = true;
+    m_showcaseCharacter.visual = std::move(built);
+    m_showcaseCharacter.visible = true;
+    m_showcaseCharacter.gpuDirty = true;
+    if (!m_creationCameraRigReady) {
+        ResetCreationCameraRig();
+    } else {
+        UpdateCreationCameraFromRig();
+    }
 
     std::string gpuError;
-    if (!EnsureCreationPreviewGpuResources(&gpuError)) {
+    if (!EnsureShowcaseGpuResources(m_showcaseCharacter, &gpuError)) {
         AppLogger::Log("[RS3] SetCreationPreview GPU prepare failed: " + gpuError);
         return false;
     }
@@ -1321,7 +1735,10 @@ bool RScene::SetCreationPreview(int sex, int face, int preset, int hair) {
 }
 
 void RScene::SetCreationPreviewVisible(bool visible) {
-    m_creationPreviewVisible = visible;
+    m_showcaseCharacter.visible = visible;
+    if (visible && m_showcasePlatform.visual.valid) {
+        m_showcasePlatform.visible = true;
+    }
 }
 
 bool RScene::GetSpawnPos(DirectX::XMFLOAT3& outPos) const {

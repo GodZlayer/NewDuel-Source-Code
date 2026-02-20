@@ -25,10 +25,18 @@ public:
     bool LoadCharSelectPackage(const std::string& sceneId);
     void LoadLobbyBasic();
     void Update(float deltaTime);
+    void DrawWorld(ID3D11DeviceContext* context, DirectX::FXMMATRIX viewProj);
+    void DrawShowcase(ID3D11DeviceContext* context, DirectX::FXMMATRIX viewProj, bool forceNoDepthTest);
     void Draw(ID3D11DeviceContext* context, DirectX::FXMMATRIX viewProj);
+    void SetShowcaseViewportPixels(int x, int y, int width, int height);
     bool GetPreferredCamera(DirectX::XMFLOAT3& outPos, DirectX::XMFLOAT3& outDir) const;
     bool SetCreationPreview(int sex, int face, int preset, int hair);
     void SetCreationPreviewVisible(bool visible);
+    bool AdjustCreationCamera(float yawDeltaDeg, float pitchDeltaDeg, float zoomDelta);
+    bool AdjustCreationCharacterYaw(float yawDeltaDeg);
+    bool SetCreationCameraPose(float yawDeg, float pitchDeg, float distance, float focusHeight, bool autoOrbit);
+    void SetCreationCameraAutoOrbit(bool enabled);
+    void ResetCreationCamera();
     bool GetSpawnPos(DirectX::XMFLOAT3& outPos) const;
 
 private:
@@ -85,6 +93,20 @@ private:
         std::vector<SkinSubmeshRuntime> submeshes;
     };
 
+    struct ShowcaseRenderable {
+        std::string debugName;
+        CharacterVisualInstance visual;
+        std::vector<SkinPackageRuntime> gpu;
+        bool visible = false;
+        bool gpuDirty = true;
+        bool animate = false;
+        bool skipCharacterNodeFilter = false;
+        bool faceCamera = false;
+        float yawOffsetDeg = 0.0f;
+        float scale = 1.0f;
+        DirectX::XMFLOAT3 localOffset = { 0.0f, 0.0f, 0.0f };
+    };
+
     struct SkinPerFrameCB {
         DirectX::XMFLOAT4X4 world;
         DirectX::XMFLOAT4X4 viewProj;
@@ -103,10 +125,13 @@ private:
     bool BuildMapGpuResources(const ScenePackageData& package, std::string* outError = nullptr);
     void ReleaseMapResources();
     bool EnsureSkinPipeline();
-    bool EnsureCreationPreviewGpuResources(std::string* outError = nullptr);
+    bool EnsureShowcaseGpuResources(ShowcaseRenderable& renderable, std::string* outError = nullptr);
     void ReleaseCreationPreviewResources();
-    bool BuildPreviewWorldMatrix(DirectX::XMFLOAT4X4& outWorld) const;
+    bool BuildShowcaseWorldMatrix(const ShowcaseRenderable& renderable, bool applyCreationOrientation, DirectX::XMFLOAT4X4& outWorld) const;
     void BuildBindPoseSkinMatrices(const RS3ModelPackage& package, std::vector<DirectX::XMFLOAT4X4>& outMatrices) const;
+    void ResetCreationCameraRig();
+    void UpdateCreationCameraFromRig();
+    DirectX::XMFLOAT3 GetCreationCameraFocus() const;
 
 private:
     ID3D11Device* m_pd3dDevice = nullptr;
@@ -114,14 +139,26 @@ private:
     std::unique_ptr<TextureManager> m_textureManager;
     std::unique_ptr<CharacterAssembler> m_characterAssembler;
 
-    CharacterVisualInstance m_creationPreview;
-    bool m_creationPreviewVisible = false;
-    bool m_creationPreviewGpuDirty = true;
+    ShowcaseRenderable m_showcaseCharacter;
+    ShowcaseRenderable m_showcasePlatform;
+    bool m_creationShowroomMode = false;
+    DirectX::XMFLOAT3 m_creationShowroomAnchor = { 0.0f, 0.0f, 0.0f };
     int m_creationSex = 0;
     int m_creationFace = 0;
     int m_creationPreset = 0;
     int m_creationHair = 0;
-    std::vector<SkinPackageRuntime> m_creationPreviewGpu;
+
+    bool m_creationCameraRigReady = false;
+    bool m_creationCameraAutoOrbit = true;
+    float m_creationCameraYaw = 0.0f;
+    float m_creationCameraPitch = 0.16f;
+    float m_creationCameraDistance = 360.0f;
+    float m_creationCameraFocusHeight = 90.0f;
+    float m_creationCameraYawTarget = 0.0f;
+    float m_creationCameraPitchTarget = 0.16f;
+    float m_creationCameraDistanceTarget = 360.0f;
+    float m_creationCameraFocusHeightTarget = 90.0f;
+    float m_creationCharacterYaw = 0.0f;
 
     DirectX::XMFLOAT3 m_cameraPos = { 0.0f, -800.0f, 220.0f };
     DirectX::XMFLOAT3 m_cameraDir = { 0.0f, 1.0f, -0.2f };
@@ -167,6 +204,10 @@ private:
     Microsoft::WRL::ComPtr<ID3D11BlendState> m_skinBsAdditive;
     Microsoft::WRL::ComPtr<ID3D11DepthStencilState> m_skinDsDepthWrite;
     Microsoft::WRL::ComPtr<ID3D11DepthStencilState> m_skinDsDepthRead;
+    Microsoft::WRL::ComPtr<ID3D11DepthStencilState> m_skinDsNoDepth;
+
+    bool m_showcaseViewportEnabled = false;
+    D3D11_VIEWPORT m_showcaseViewport = { 0.0f, 0.0f, 1280.0f, 720.0f, 0.0f, 1.0f };
 };
 
 } // namespace RealSpace3

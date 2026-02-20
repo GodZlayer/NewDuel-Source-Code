@@ -5,6 +5,7 @@
 #include <functional>
 #include <mutex>
 #include <vector>
+#include <atomic>
 
 namespace Nakama {
     class NakamaManager {
@@ -14,7 +15,8 @@ namespace Nakama {
             return instance;
         }
 
-        void init(const std::string& host, int port, const std::string& serverKey);
+        void init(const std::string& host, int port, const std::string& serverKey, bool useSSL = false);
+        void shutdown();
         void tick();
 
         void authenticateDevice(const std::string& deviceId, std::function<void(bool)> callback);
@@ -68,6 +70,7 @@ namespace Nakama {
         NSessionPtr _session;
         NRtClientPtr _rtClient;
         std::shared_ptr<NRtDefaultClientListener> _rtListener;
+        NHttpTransportPtr _httpTransport;
         NClientParameters _params;
         std::string _currentStageMatchId;
 
@@ -75,6 +78,7 @@ namespace Nakama {
         bool _rtConnecting = false;
         std::vector<std::function<void(bool, const std::string&)>> _rtConnectWaiters;
         std::mutex _rtMutex;
+        std::atomic<uint64_t> _clientGeneration{0};
 
         static std::string escapeJson(const std::string& value);
         void rpcCall(const std::string& rpcId, const std::string& payload, std::function<void(bool, const std::string&)> callback);
