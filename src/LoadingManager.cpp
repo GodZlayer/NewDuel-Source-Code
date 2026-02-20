@@ -16,8 +16,9 @@ void LoadingManager::update(float deltaTime) {
         if (m_milestone == 0 && m_progress >= 5)  { UIManager::getInstance().setStatus("Iniciando Bridge Nakama..."); AppLogger::Log("LOADING: Inicializando Nakama SDK"); m_milestone++; }
         if (m_milestone == 1 && m_progress >= 25) { 
             UIManager::getInstance().setStatus("Carregando Dados do Mundo..."); 
-            AppLogger::Log("LOADING: Carregando Cenario de Login");
-            RealSpace3::SceneManager::getInstance().loadHangar();
+            AppLogger::Log("LOADING: Carregando cena RS3 para cinematic background");
+            (void)RealSpace3::SceneManager::getInstance().loadScenePackage("char_creation_select");
+            (void)RealSpace3::SceneManager::getInstance().setRenderMode(RealSpace3::RS3RenderMode::MapOnlyCinematic);
             m_milestone++; 
         }
         if (m_milestone == 2 && m_progress >= 50) { UIManager::getInstance().setStatus("Alocando Geometrias DX11..."); AppLogger::Log("LOADING: Alocando Memoria GPU"); m_milestone++; }

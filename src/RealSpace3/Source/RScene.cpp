@@ -10,6 +10,7 @@
 #include <cctype>
 #include <cmath>
 #include <cstring>
+#include <limits>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -29,8 +30,9 @@ constexpr float kCreationCameraDistanceMax = 980.0f;
 constexpr float kCreationCameraLerpSpeed = 10.0f;
 constexpr float kCreationCameraAutoOrbitSpeed = 0.18f;
 constexpr float kCreationShowroomPitch = 0.17f;
-constexpr float kCreationShowroomDistance = 340.0f;
+constexpr float kCreationShowroomDistance = 250.0f;
 constexpr float kCreationShowroomFocusHeight = 92.0f;
+constexpr float kShowcasePlatformTargetDiameter = 125.0f;
 constexpr float kPi = 3.14159265358979323846f;
 constexpr float kTwoPi = 6.28318530717958647692f;
 
@@ -96,15 +98,42 @@ bool ShouldSkipCharacterPreviewNode(const std::string& nodeName) {
         // Character base ELU carries all weapon placeholders; keep them hidden in preview.
         return true;
     }
-    if (lower.rfind("bip01", 0) == 0) {
-        // Temporary OGZ parity fallback for char-select:
-        // hide base bip geometry until cut-parts masking is ported.
-        return true;
-    }
     if (lower == "bip01 footsteps") {
         return true;
     }
     return false;
+}
+
+bool ComputeVisualBounds(const CharacterVisualInstance& visual, DirectX::XMFLOAT3& outMin, DirectX::XMFLOAT3& outMax) {
+    float minX = std::numeric_limits<float>::max();
+    float minY = std::numeric_limits<float>::max();
+    float minZ = std::numeric_limits<float>::max();
+    float maxX = std::numeric_limits<float>::lowest();
+    float maxY = std::numeric_limits<float>::lowest();
+    float maxZ = std::numeric_limits<float>::lowest();
+    bool found = false;
+
+    for (const auto& package : visual.packages) {
+        for (const auto& v : package.vertices) {
+            minX = std::min(minX, v.pos.x);
+            minY = std::min(minY, v.pos.y);
+            minZ = std::min(minZ, v.pos.z);
+            maxX = std::max(maxX, v.pos.x);
+            maxY = std::max(maxY, v.pos.y);
+            maxZ = std::max(maxZ, v.pos.z);
+            found = true;
+        }
+    }
+
+    if (!found) {
+        outMin = { 0.0f, 0.0f, 0.0f };
+        outMax = { 0.0f, 0.0f, 0.0f };
+        return false;
+    }
+
+    outMin = { minX, minY, minZ };
+    outMax = { maxX, maxY, maxZ };
+    return true;
 }
 
 std::string ReplaceTextureFilename(const std::string& sourcePath, const char* replacementFilename) {
@@ -433,12 +462,14 @@ RScene::RScene(ID3D11Device* device, ID3D11DeviceContext* context)
     m_showcaseCharacter.animate = true;
     m_showcaseCharacter.skipCharacterNodeFilter = true;
     m_showcaseCharacter.faceCamera = true;
+    m_showcaseCharacter.applySubmeshNodeTransform = false;
     m_showcaseCharacter.visible = false;
 
     m_showcasePlatform.debugName = "platform";
     m_showcasePlatform.animate = false;
     m_showcasePlatform.skipCharacterNodeFilter = false;
     m_showcasePlatform.faceCamera = false;
+    m_showcasePlatform.applySubmeshNodeTransform = true;
     m_showcasePlatform.visible = false;
     m_showcasePlatform.scale = 1.0f;
     m_showcasePlatform.localOffset = { 0.0f, 0.0f, -6.0f };
@@ -447,6 +478,39 @@ RScene::RScene(ID3D11Device* device, ID3D11DeviceContext* context)
 RScene::~RScene() {
     ReleaseCreationPreviewResources();
     ReleaseMapResources();
+}
+
+bool RScene::LoadScenePackage(const std::string& sceneId) {
+    ScenePackageData package;
+    std::string error;
+
+    if (!ScenePackageLoader::Load(sceneId, package, &error)) {
+        AppLogger::Log("[RS3] LoadScenePackage failed: " + error);
+        return false;
+    }
+
+    if (!EnsureMapPipeline()) {
+        AppLogger::Log("[RS3] LoadScenePackage failed: map pipeline initialization failed.");
+        return false;
+    }
+
+    if (!BuildMapGpuResources(package, &error)) {
+        AppLogger::Log("[RS3] LoadScenePackage failed: " + error);
+        return false;
+    }
+
+    m_creationShowroomMode = false;
+    m_hasCameraOverride = false;
+    SetRenderMode(RS3RenderMode::MapOnlyCinematic);
+
+    std::ostringstream oss;
+    oss << "[RS3] LoadScenePackage success: sceneId='" << sceneId
+        << "' verts=" << package.vertices.size()
+        << " indices=" << package.indices.size()
+        << " sections=" << package.sections.size()
+        << " materials=" << package.materials.size();
+    AppLogger::Log(oss.str());
+    return true;
 }
 
 void RScene::LoadCharSelect() {
@@ -462,69 +526,30 @@ void RScene::LoadCharSelect() {
     m_creationCharacterYaw = 0.0f;
     m_creationCameraRigReady = false;
     m_creationCameraAutoOrbit = true;
+    m_hasCameraOverride = false;
+    m_creationShowroomMode = true;
+    m_creationShowroomAnchor = { 0.0f, 0.0f, 0.0f };
+    SetRenderMode(RS3RenderMode::ShowcaseOnly);
 
     if (!LoadCharSelectPackage(kCharSelectSceneId)) {
         AppLogger::Log("[RS3] LoadCharSelect -> package load failed, falling back to LoadLobbyBasic.");
         LoadLobbyBasic();
         m_creationShowroomMode = true;
         m_creationShowroomAnchor = { 0.0f, 0.0f, 0.0f };
+        SetRenderMode(RS3RenderMode::ShowcaseOnly);
         ResetCreationCameraRig();
         return;
     }
 
-    CharacterVisualRequest platformReq;
-    platformReq.baseModelId = kShowcasePlatformModelId;
+    SetRenderMode(RS3RenderMode::ShowcaseOnly);
 
-    CharacterVisualInstance platformBuilt;
-    std::string platformError;
-    if (!m_characterAssembler->BuildCharacterVisual(platformReq, platformBuilt, &platformError)) {
-        AppLogger::Log("[RS3] Showcase platform unavailable: " + platformError);
-        m_showcasePlatform.visual = CharacterVisualInstance{};
-        m_showcasePlatform.visible = false;
-        m_showcasePlatform.gpuDirty = true;
-    } else {
-        m_showcasePlatform.visual = std::move(platformBuilt);
-        m_showcasePlatform.visible = true;
-        m_showcasePlatform.gpuDirty = true;
-        std::string gpuError;
-        if (!EnsureShowcaseGpuResources(m_showcasePlatform, &gpuError)) {
-            AppLogger::Log("[RS3] Showcase platform GPU prepare failed: " + gpuError);
-            m_showcasePlatform.visible = false;
-        } else {
-            AppLogger::Log("[RS3] Showcase platform ready: model='" + std::string(kShowcasePlatformModelId) + "'.");
-        }
-    }
+    (void)SetShowcaseObjectModel(kShowcasePlatformModelId);
 
     AppLogger::Log("[RS3] LoadCharSelect -> scene package active: char_creation_select (showroom mode enabled).");
 }
 
 bool RScene::LoadCharSelectPackage(const std::string& sceneId) {
-    ScenePackageData package;
-    std::string error;
-
-    if (!ScenePackageLoader::Load(sceneId, package, &error)) {
-        AppLogger::Log("[RS3] LoadCharSelectPackage failed: " + error);
-        return false;
-    }
-
-    if (!EnsureMapPipeline()) {
-        AppLogger::Log("[RS3] LoadCharSelectPackage failed: map pipeline initialization failed.");
-        return false;
-    }
-
-    if (!BuildMapGpuResources(package, &error)) {
-        AppLogger::Log("[RS3] LoadCharSelectPackage failed: " + error);
-        return false;
-    }
-
-    std::ostringstream oss;
-    oss << "[RS3] LoadCharSelectPackage success: sceneId='" << sceneId
-        << "' verts=" << package.vertices.size()
-        << " indices=" << package.indices.size()
-        << " sections=" << package.sections.size()
-        << " materials=" << package.materials.size();
-    AppLogger::Log(oss.str());
-    return true;
+    return LoadScenePackage(sceneId);
 }
 
 void RScene::LoadLobbyBasic() {
@@ -542,9 +567,15 @@ void RScene::LoadLobbyBasic() {
     m_creationCharacterYaw = 0.0f;
     m_creationCameraRigReady = false;
     m_creationCameraAutoOrbit = true;
+    m_hasCameraOverride = false;
+    SetRenderMode(RS3RenderMode::Gameplay);
 
     m_cameraPos = { 0.0f, -800.0f, 220.0f };
     m_cameraDir = { 0.0f, 1.0f, -0.2f };
+    m_cameraUp = { 0.0f, 0.0f, 1.0f };
+    m_cameraFovDeg = 60.0f;
+    m_cameraNearZ = 1.0f;
+    m_cameraFarZ = 20000.0f;
 
     m_hasSpawnPos = false;
     m_spawnPos = { 0.0f, 0.0f, 0.0f };
@@ -1388,7 +1419,7 @@ void RScene::Update(float deltaTime) {
         return;
     }
 
-    if (m_creationCameraRigReady) {
+    if (m_creationCameraRigReady && !m_hasCameraOverride) {
         if (m_creationCameraAutoOrbit && m_showcaseCharacter.visible) {
             m_creationCameraYawTarget = WrapAngle(m_creationCameraYawTarget + kCreationCameraAutoOrbitSpeed * deltaTime);
         }
@@ -1417,8 +1448,7 @@ void RScene::DrawWorld(ID3D11DeviceContext* context, DirectX::FXMMATRIX viewProj
 
     m_stateManager->ClearSRVs();
 
-    // Char select showcase mode: hide world map and render only showcase layers.
-    if (m_creationShowroomMode) {
+    if (m_renderMode == RS3RenderMode::ShowcaseOnly || !m_hasMapGeometry) {
         m_stateManager->Reset();
         return;
     }
@@ -1481,8 +1511,7 @@ void RScene::DrawShowcase(ID3D11DeviceContext* context, DirectX::FXMMATRIX viewP
 
     m_stateManager->ClearSRVs();
 
-    // Overlay showcase only runs when UI provides an explicit stage rect.
-    if (!m_showcaseViewportEnabled) {
+    if (m_renderMode != RS3RenderMode::ShowcaseOnly) {
         m_stateManager->Reset();
         return;
     }
@@ -1496,8 +1525,37 @@ void RScene::DrawShowcase(ID3D11DeviceContext* context, DirectX::FXMMATRIX viewP
     UINT savedViewportCount = D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE;
     context->RSGetViewports(&savedViewportCount, savedViewports);
 
+    D3D11_VIEWPORT stageViewport = {};
     if (m_showcaseViewportEnabled) {
-        context->RSSetViewports(1, &m_showcaseViewport);
+        stageViewport = m_showcaseViewport;
+    } else if (savedViewportCount > 0) {
+        stageViewport = savedViewports[0];
+    } else {
+        stageViewport = { 0.0f, 0.0f, 1280.0f, 720.0f, 0.0f, 1.0f };
+    }
+    context->RSSetViewports(1, &stageViewport);
+
+    DirectX::XMMATRIX showcaseViewProj = viewProj;
+    {
+        const float vpWidth = std::max(1.0f, stageViewport.Width);
+        const float vpHeight = std::max(1.0f, stageViewport.Height);
+        const float vpAspect = vpWidth / vpHeight;
+
+        const DirectX::XMVECTOR eye = DirectX::XMVectorSet(m_cameraPos.x, m_cameraPos.y, m_cameraPos.z, 0.0f);
+        DirectX::XMVECTOR dir = DirectX::XMVectorSet(m_cameraDir.x, m_cameraDir.y, m_cameraDir.z, 0.0f);
+        if (DirectX::XMVectorGetX(DirectX::XMVector3LengthSq(dir)) < 0.000001f) {
+            dir = DirectX::XMVectorSet(0.0f, 1.0f, -0.2f, 0.0f);
+        } else {
+            dir = DirectX::XMVector3Normalize(dir);
+        }
+        const DirectX::XMVECTOR at = DirectX::XMVectorAdd(eye, DirectX::XMVectorScale(dir, 1000.0f));
+        const DirectX::XMMATRIX showcaseView = DirectX::XMMatrixLookAtLH(
+            eye,
+            at,
+            DirectX::XMVectorSet(m_cameraUp.x, m_cameraUp.y, m_cameraUp.z, 0.0f));
+        const DirectX::XMMATRIX showcaseProj =
+            DirectX::XMMatrixPerspectiveFovLH(DirectX::XM_PI * ClampFloat(m_cameraFovDeg, 1.0f, 170.0f) / 180.0f, vpAspect, std::max(0.01f, m_cameraNearZ), std::max(m_cameraNearZ + 0.1f, m_cameraFarZ));
+        showcaseViewProj = DirectX::XMMatrixMultiply(showcaseView, showcaseProj);
     }
 
     auto drawRenderable = [&](ShowcaseRenderable& renderable, bool applyCreationOrientation) -> size_t {
@@ -1573,7 +1631,9 @@ void RScene::DrawShowcase(ID3D11DeviceContext* context, DirectX::FXMMATRIX viewP
                         m = Identity4x4();
                     }
                     const size_t copyCount = std::min<size_t>(skinMatrices.size(), MAX_BONES);
-                    const DirectX::XMMATRIX subRef = DirectX::XMLoadFloat4x4(&sub.nodeTransform);
+                    const DirectX::XMMATRIX subRef = renderable.applySubmeshNodeTransform
+                        ? DirectX::XMLoadFloat4x4(&sub.nodeTransform)
+                        : DirectX::XMMatrixIdentity();
                     for (size_t i = 0; i < copyCount; ++i) {
                         const DirectX::XMMATRIX skin = DirectX::XMLoadFloat4x4(&skinMatrices[i]);
                         const DirectX::XMMATRIX combined = DirectX::XMMatrixMultiply(subRef, skin);
@@ -1583,7 +1643,7 @@ void RScene::DrawShowcase(ID3D11DeviceContext* context, DirectX::FXMMATRIX viewP
 
                     SkinPerFrameCB cb = {};
                     cb.world = world;
-                    DirectX::XMStoreFloat4x4(&cb.viewProj, viewProj);
+                    DirectX::XMStoreFloat4x4(&cb.viewProj, showcaseViewProj);
                     cb.lightDirIntensity = { m_sceneLightDir.x, m_sceneLightDir.y, m_sceneLightDir.z, m_sceneLightIntensity };
                     cb.lightColorFogMin = { m_sceneLightColor.x, m_sceneLightColor.y, m_sceneLightColor.z, m_fogMin };
                     cb.fogColorFogMax = { m_fogColor.x, m_fogColor.y, m_fogColor.z, m_fogMax };
@@ -1618,10 +1678,10 @@ void RScene::DrawShowcase(ID3D11DeviceContext* context, DirectX::FXMMATRIX viewP
         const std::string clipName = clip ? clip->name : std::string("<none>");
         AppLogger::Log("[RS3] Showcase draw stats: platform_calls=" + std::to_string(platformDrawCount) +
             " character_calls=" + std::to_string(characterDrawCount) +
-            " viewport=" + std::to_string(static_cast<int>(m_showcaseViewport.TopLeftX)) + "," +
-            std::to_string(static_cast<int>(m_showcaseViewport.TopLeftY)) + "," +
-            std::to_string(static_cast<int>(m_showcaseViewport.Width)) + "x" +
-            std::to_string(static_cast<int>(m_showcaseViewport.Height)) +
+            " viewport=" + std::to_string(static_cast<int>(stageViewport.TopLeftX)) + "," +
+            std::to_string(static_cast<int>(stageViewport.TopLeftY)) + "," +
+            std::to_string(static_cast<int>(stageViewport.Width)) + "x" +
+            std::to_string(static_cast<int>(stageViewport.Height)) +
             " clip='" + clipName + "' t=" + std::to_string(m_showcaseCharacter.visual.animation.GetCurrentTimeSeconds()));
     }
 
@@ -1660,10 +1720,64 @@ void RScene::SetShowcaseViewportPixels(int x, int y, int width, int height) {
     }
 }
 
+void RScene::SetRenderMode(RS3RenderMode mode) {
+    m_renderMode = mode;
+}
+
+RS3RenderMode RScene::GetRenderMode() const {
+    return m_renderMode;
+}
+
+bool RScene::SetCameraPose(const RS3CameraPose& pose, bool immediate) {
+    m_hasCameraOverride = true;
+    m_cameraPos = pose.position;
+    m_cameraUp = pose.up;
+    m_cameraFovDeg = pose.fovDeg;
+    m_cameraNearZ = pose.nearZ;
+    m_cameraFarZ = pose.farZ;
+
+    const DirectX::XMFLOAT3 dir = {
+        pose.target.x - pose.position.x,
+        pose.target.y - pose.position.y,
+        pose.target.z - pose.position.z
+    };
+    const DirectX::XMVECTOR dirV = DirectX::XMVectorSet(dir.x, dir.y, dir.z, 0.0f);
+    if (DirectX::XMVectorGetX(DirectX::XMVector3LengthSq(dirV)) < 0.000001f) {
+        m_cameraDir = { 0.0f, 1.0f, -0.2f };
+    } else {
+        DirectX::XMStoreFloat3(&m_cameraDir, DirectX::XMVector3Normalize(dirV));
+    }
+
+    if (!immediate && m_creationCameraRigReady && m_renderMode == RS3RenderMode::ShowcaseOnly) {
+        // When a scripted camera is applied smoothly over showcase, keep user rig interpolation alive.
+        m_creationCameraAutoOrbit = false;
+    }
+
+    return true;
+}
+
+void RScene::ClearCameraPose() {
+    m_hasCameraOverride = false;
+}
+
+bool RScene::GetPreferredCameraPose(RS3CameraPose& outPose) const {
+    outPose.position = m_cameraPos;
+    outPose.target = {
+        m_cameraPos.x + m_cameraDir.x * 1000.0f,
+        m_cameraPos.y + m_cameraDir.y * 1000.0f,
+        m_cameraPos.z + m_cameraDir.z * 1000.0f
+    };
+    outPose.up = m_cameraUp;
+    outPose.fovDeg = m_cameraFovDeg;
+    outPose.nearZ = m_cameraNearZ;
+    outPose.farZ = m_cameraFarZ;
+    return m_hasMapGeometry || m_creationShowroomMode || m_hasCameraOverride;
+}
+
 bool RScene::GetPreferredCamera(DirectX::XMFLOAT3& outPos, DirectX::XMFLOAT3& outDir) const {
     outPos = m_cameraPos;
     outDir = m_cameraDir;
-    return m_hasMapGeometry || m_creationShowroomMode;
+    return m_hasMapGeometry || m_creationShowroomMode || m_hasCameraOverride;
 }
 
 bool RScene::SetCreationPreview(int sex, int face, int preset, int hair) {
@@ -1691,6 +1805,50 @@ bool RScene::SetCreationPreview(int sex, int face, int preset, int hair) {
     }
 
     ApplyCreationTextureOverrides(built, sex, face, hair);
+
+    float desiredFocusHeight = -1.0f;
+    float desiredDistance = -1.0f;
+
+    DirectX::XMFLOAT3 charMin;
+    DirectX::XMFLOAT3 charMax;
+    if (ComputeVisualBounds(built, charMin, charMax)) {
+        const float charHeight = std::max(0.001f, charMax.z - charMin.z);
+        constexpr float kCharacterTargetHeight = 185.0f;
+        m_showcaseCharacter.scale = ClampFloat(kCharacterTargetHeight / charHeight, 0.75f, 3.5f);
+        const float centerX = (charMin.x + charMax.x) * 0.5f;
+        const float centerY = (charMin.y + charMax.y) * 0.5f;
+        float groundZ = 0.0f;
+        if (m_showcasePlatform.visible && m_showcasePlatform.visual.valid) {
+            DirectX::XMFLOAT3 platformMin;
+            DirectX::XMFLOAT3 platformMax;
+            if (ComputeVisualBounds(m_showcasePlatform.visual, platformMin, platformMax)) {
+                groundZ = m_showcasePlatform.localOffset.z + (platformMax.z * m_showcasePlatform.scale);
+            }
+        }
+
+        m_showcaseCharacter.localOffset = {
+            -centerX * m_showcaseCharacter.scale,
+            -centerY * m_showcaseCharacter.scale,
+            groundZ - (charMin.z * m_showcaseCharacter.scale) + 1.0f
+        };
+
+        const float scaledHeight = charHeight * m_showcaseCharacter.scale;
+        const float focusHeight = ClampFloat(
+            m_showcaseCharacter.localOffset.z + scaledHeight * 0.56f,
+            30.0f,
+            260.0f);
+        desiredFocusHeight = focusHeight;
+        desiredDistance = ClampFloat(scaledHeight * 1.35f, 170.0f, 360.0f);
+
+        AppLogger::Log("[RS3] Character fit: height=" + std::to_string(charHeight) +
+            " scale=" + std::to_string(m_showcaseCharacter.scale) +
+            " offset=(" + std::to_string(m_showcaseCharacter.localOffset.x) + "," +
+            std::to_string(m_showcaseCharacter.localOffset.y) + "," +
+            std::to_string(m_showcaseCharacter.localOffset.z) + ")");
+    } else {
+        m_showcaseCharacter.scale = 1.0f;
+        m_showcaseCharacter.localOffset = { 0.0f, 0.0f, 0.0f };
+    }
 
     bool clipSet = false;
     static const std::array<const char*, 4> kClipFallback = {
@@ -1723,6 +1881,13 @@ bool RScene::SetCreationPreview(int sex, int face, int preset, int hair) {
     } else {
         UpdateCreationCameraFromRig();
     }
+    if (desiredFocusHeight > 0.0f) {
+        m_creationCameraFocusHeightTarget = desiredFocusHeight;
+        m_creationCameraDistanceTarget = desiredDistance;
+        m_creationCameraFocusHeight = desiredFocusHeight;
+        m_creationCameraDistance = desiredDistance;
+        UpdateCreationCameraFromRig();
+    }
 
     std::string gpuError;
     if (!EnsureShowcaseGpuResources(m_showcaseCharacter, &gpuError)) {
@@ -1731,6 +1896,75 @@ bool RScene::SetCreationPreview(int sex, int face, int preset, int hair) {
     }
 
     AppLogger::Log("[RS3] SetCreationPreview success: model='" + req.baseModelId + "'.");
+    return true;
+}
+
+bool RScene::SetShowcaseObjectModel(const std::string& modelId) {
+    if (modelId.empty()) {
+        m_showcasePlatform.visual = CharacterVisualInstance{};
+        m_showcasePlatform.visible = false;
+        m_showcasePlatform.gpuDirty = true;
+        return false;
+    }
+
+    CharacterVisualRequest req;
+    req.baseModelId = modelId;
+
+    CharacterVisualInstance built;
+    std::string error;
+    if (!m_characterAssembler->BuildCharacterVisual(req, built, &error)) {
+        AppLogger::Log("[RS3] SetShowcaseObjectModel failed for model='" + modelId + "': " + error);
+        m_showcasePlatform.visual = CharacterVisualInstance{};
+        m_showcasePlatform.visible = false;
+        m_showcasePlatform.gpuDirty = true;
+        return false;
+    }
+
+    m_showcasePlatform.visual = std::move(built);
+    m_showcasePlatform.visible = true;
+    m_showcasePlatform.gpuDirty = true;
+    m_showcasePlatform.animate = false;
+    m_showcasePlatform.skipCharacterNodeFilter = false;
+    m_showcasePlatform.faceCamera = false;
+    m_showcasePlatform.applySubmeshNodeTransform = true;
+
+    DirectX::XMFLOAT3 boundsMin;
+    DirectX::XMFLOAT3 boundsMax;
+    if (ComputeVisualBounds(m_showcasePlatform.visual, boundsMin, boundsMax)) {
+        const float sizeX = boundsMax.x - boundsMin.x;
+        const float sizeY = boundsMax.y - boundsMin.y;
+        const float horizontalSpan = std::max(sizeX, sizeY);
+        const float safeSpan = (horizontalSpan > 0.001f) ? horizontalSpan : 1.0f;
+        m_showcasePlatform.scale = kShowcasePlatformTargetDiameter / safeSpan;
+
+        const float centerX = (boundsMin.x + boundsMax.x) * 0.5f;
+        const float centerY = (boundsMin.y + boundsMax.y) * 0.5f;
+        const float topZ = boundsMax.z;
+        m_showcasePlatform.localOffset = {
+            -centerX * m_showcasePlatform.scale,
+            -centerY * m_showcasePlatform.scale,
+            -topZ * m_showcasePlatform.scale
+        };
+
+        AppLogger::Log("[RS3] Showcase object fit: model='" + modelId +
+            "' span=" + std::to_string(horizontalSpan) +
+            " scale=" + std::to_string(m_showcasePlatform.scale) +
+            " offset=(" + std::to_string(m_showcasePlatform.localOffset.x) + "," +
+            std::to_string(m_showcasePlatform.localOffset.y) + "," +
+            std::to_string(m_showcasePlatform.localOffset.z) + ")");
+    } else {
+        m_showcasePlatform.scale = 1.0f;
+        m_showcasePlatform.localOffset = { 0.0f, 0.0f, 0.0f };
+    }
+
+    std::string gpuError;
+    if (!EnsureShowcaseGpuResources(m_showcasePlatform, &gpuError)) {
+        AppLogger::Log("[RS3] SetShowcaseObjectModel GPU prepare failed for model='" + modelId + "': " + gpuError);
+        m_showcasePlatform.visible = false;
+        return false;
+    }
+
+    AppLogger::Log("[RS3] SetShowcaseObjectModel success: model='" + modelId + "'.");
     return true;
 }
 

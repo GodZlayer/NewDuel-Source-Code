@@ -78,6 +78,26 @@ public:
         if (pageUrl.find("character_selection.html") == std::string::npos) {
             RealSpace3::SceneManager::getInstance().setShowcaseViewport(0, 0, 0, 0);
             RealSpace3::SceneManager::getInstance().setCreationPreviewVisible(false);
+            RealSpace3::SceneManager::getInstance().setRenderMode(RealSpace3::RS3RenderMode::MapOnlyCinematic);
+
+            const bool wantsCineBackground =
+                (pageUrl.find("login.html") != std::string::npos) ||
+                (pageUrl.find("loading.html") != std::string::npos) ||
+                (pageUrl.find("lobby.html") != std::string::npos);
+            if (wantsCineBackground) {
+                RealSpace3::RS3TimelinePlaybackOptions opts;
+                opts.loop = true;
+                opts.speed = 1.0f;
+                opts.startTimeSec = 0.0f;
+                opts.endTimeSec = -1.0f;
+                (void)RealSpace3::SceneManager::getInstance().playTimeline("char_select_intro.ndgcine.json", opts);
+            } else {
+                RealSpace3::SceneManager::getInstance().stopTimeline();
+            }
+        } else {
+            RealSpace3::SceneManager::getInstance().stopTimeline();
+            RealSpace3::SceneManager::getInstance().loadHangar();
+            RealSpace3::SceneManager::getInstance().setRenderMode(RealSpace3::RS3RenderMode::ShowcaseOnly);
         }
 
         JSContextRef ctx = caller->LockJSContext()->ctx();
@@ -239,6 +259,66 @@ public:
             const int h = static_cast<int>(JSValueToNumber(ctx, argv[3], nullptr));
             RealSpace3::SceneManager::getInstance().setShowcaseViewport(x, y, w, h);
             return JSValueMakeBoolean(ctx, true);
+        });
+
+        bind("set_rs3_render_mode", [](JSContextRef ctx, JSObjectRef f, JSObjectRef t, size_t argc, const JSValueRef argv[], JSValueRef* ex) -> JSValueRef {
+            if (argc < 1) return JSValueMakeBoolean(ctx, false);
+            const std::string mode = JSValueToStdString(ctx, argv[0]);
+            RealSpace3::RS3RenderMode renderMode;
+            if (!RealSpace3::ParseRenderModeString(mode, renderMode)) {
+                return JSValueMakeBoolean(ctx, false);
+            }
+            const bool ok = RealSpace3::SceneManager::getInstance().setRenderMode(renderMode);
+            return JSValueMakeBoolean(ctx, ok);
+        });
+
+        bind("load_rs3_scene", [](JSContextRef ctx, JSObjectRef f, JSObjectRef t, size_t argc, const JSValueRef argv[], JSValueRef* ex) -> JSValueRef {
+            if (argc < 1) return JSValueMakeBoolean(ctx, false);
+            const std::string sceneId = JSValueToStdString(ctx, argv[0]);
+            if (sceneId.empty()) return JSValueMakeBoolean(ctx, false);
+            const bool ok = RealSpace3::SceneManager::getInstance().loadScenePackage(sceneId);
+            return JSValueMakeBoolean(ctx, ok);
+        });
+
+        bind("play_rs3_timeline", [](JSContextRef ctx, JSObjectRef f, JSObjectRef t, size_t argc, const JSValueRef argv[], JSValueRef* ex) -> JSValueRef {
+            if (argc < 1) return JSValueMakeBoolean(ctx, false);
+            const std::string timelinePath = JSValueToStdString(ctx, argv[0]);
+            const bool loop = (argc >= 2) ? JSValueToBoolean(ctx, argv[1]) : false;
+            RealSpace3::RS3TimelinePlaybackOptions opts;
+            opts.loop = loop;
+            const bool ok = RealSpace3::SceneManager::getInstance().playTimeline(timelinePath, opts);
+            return JSValueMakeBoolean(ctx, ok);
+        });
+
+        bind("stop_rs3_timeline", [](JSContextRef ctx, JSObjectRef f, JSObjectRef t, size_t argc, const JSValueRef argv[], JSValueRef* ex) -> JSValueRef {
+            RealSpace3::SceneManager::getInstance().stopTimeline();
+            return JSValueMakeUndefined(ctx);
+        });
+
+        bind("set_rs3_camera_pose", [](JSContextRef ctx, JSObjectRef f, JSObjectRef t, size_t argc, const JSValueRef argv[], JSValueRef* ex) -> JSValueRef {
+            if (argc < 12) return JSValueMakeBoolean(ctx, false);
+            RealSpace3::RS3CameraPose pose;
+            pose.position = {
+                static_cast<float>(JSValueToNumber(ctx, argv[0], nullptr)),
+                static_cast<float>(JSValueToNumber(ctx, argv[1], nullptr)),
+                static_cast<float>(JSValueToNumber(ctx, argv[2], nullptr))
+            };
+            pose.target = {
+                static_cast<float>(JSValueToNumber(ctx, argv[3], nullptr)),
+                static_cast<float>(JSValueToNumber(ctx, argv[4], nullptr)),
+                static_cast<float>(JSValueToNumber(ctx, argv[5], nullptr))
+            };
+            pose.up = {
+                static_cast<float>(JSValueToNumber(ctx, argv[6], nullptr)),
+                static_cast<float>(JSValueToNumber(ctx, argv[7], nullptr)),
+                static_cast<float>(JSValueToNumber(ctx, argv[8], nullptr))
+            };
+            pose.fovDeg = static_cast<float>(JSValueToNumber(ctx, argv[9], nullptr));
+            pose.nearZ = static_cast<float>(JSValueToNumber(ctx, argv[10], nullptr));
+            pose.farZ = static_cast<float>(JSValueToNumber(ctx, argv[11], nullptr));
+            const bool immediate = (argc >= 13) ? JSValueToBoolean(ctx, argv[12]) : true;
+            const bool ok = RealSpace3::SceneManager::getInstance().setCameraPose(pose, immediate);
+            return JSValueMakeBoolean(ctx, ok);
         });
 
         bind("adjust_creation_camera", [](JSContextRef ctx, JSObjectRef f, JSObjectRef t, size_t argc, const JSValueRef argv[], JSValueRef* ex) -> JSValueRef {

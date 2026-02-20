@@ -167,6 +167,76 @@ void RDeviceDX11::Clear(float r, float g, float b, float a) {
     if (m_pDepthStencilView) m_pd3dDeviceContext->ClearDepthStencilView(m_pDepthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 }
 
+bool RDeviceDX11::ReadBackBufferBGRA(std::vector<uint8_t>& outPixels, uint32_t& outWidth, uint32_t& outHeight) {
+    outPixels.clear();
+    outWidth = 0;
+    outHeight = 0;
+    if (!m_pSwapChain || !m_pd3dDevice || !m_pd3dDeviceContext) return false;
+
+    ComPtr<ID3D11Texture2D> backBuffer;
+    if (FAILED(m_pSwapChain->GetBuffer(0, IID_PPV_ARGS(&backBuffer))) || !backBuffer) {
+        return false;
+    }
+
+    D3D11_TEXTURE2D_DESC desc = {};
+    backBuffer->GetDesc(&desc);
+    if (desc.Width == 0 || desc.Height == 0) return false;
+
+    D3D11_TEXTURE2D_DESC stagingDesc = desc;
+    stagingDesc.BindFlags = 0;
+    stagingDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+    stagingDesc.Usage = D3D11_USAGE_STAGING;
+    stagingDesc.MiscFlags = 0;
+
+    ComPtr<ID3D11Texture2D> staging;
+    if (FAILED(m_pd3dDevice->CreateTexture2D(&stagingDesc, nullptr, &staging)) || !staging) {
+        return false;
+    }
+
+    m_pd3dDeviceContext->CopyResource(staging.Get(), backBuffer.Get());
+    m_pd3dDeviceContext->Flush();
+
+    D3D11_MAPPED_SUBRESOURCE mapped = {};
+    if (FAILED(m_pd3dDeviceContext->Map(staging.Get(), 0, D3D11_MAP_READ, 0, &mapped))) {
+        return false;
+    }
+
+    outWidth = desc.Width;
+    outHeight = desc.Height;
+    outPixels.resize(static_cast<size_t>(outWidth) * static_cast<size_t>(outHeight) * 4u);
+
+    const bool isRgba = (desc.Format == DXGI_FORMAT_R8G8B8A8_UNORM || desc.Format == DXGI_FORMAT_R8G8B8A8_UNORM_SRGB);
+    const bool isBgra = (desc.Format == DXGI_FORMAT_B8G8R8A8_UNORM || desc.Format == DXGI_FORMAT_B8G8R8A8_UNORM_SRGB);
+
+    for (uint32_t y = 0; y < outHeight; ++y) {
+        const uint8_t* srcRow = reinterpret_cast<const uint8_t*>(mapped.pData) + static_cast<size_t>(mapped.RowPitch) * y;
+        uint8_t* dstRow = outPixels.data() + static_cast<size_t>(outWidth) * 4u * y;
+        for (uint32_t x = 0; x < outWidth; ++x) {
+            const uint8_t* src = srcRow + static_cast<size_t>(x) * 4u;
+            uint8_t* dst = dstRow + static_cast<size_t>(x) * 4u;
+            if (isRgba) {
+                dst[0] = src[2];
+                dst[1] = src[1];
+                dst[2] = src[0];
+                dst[3] = src[3];
+            } else if (isBgra) {
+                dst[0] = src[0];
+                dst[1] = src[1];
+                dst[2] = src[2];
+                dst[3] = src[3];
+            } else {
+                dst[0] = src[0];
+                dst[1] = src[1];
+                dst[2] = src[2];
+                dst[3] = src[3];
+            }
+        }
+    }
+
+    m_pd3dDeviceContext->Unmap(staging.Get(), 0);
+    return true;
+}
+
 void RDeviceDX11::Present() { if (m_pSwapChain) m_pSwapChain->Present(1, 0); }
 
 }

@@ -2,6 +2,7 @@
 #include <d3d11.h>
 #include <wrl/client.h>
 #include <cstdint>
+#include <vector>
 
 using Microsoft::WRL::ComPtr;
 
@@ -23,6 +24,7 @@ public:
 
     void SetStandard3DStates();
     void DrawAtomicProof(); // PROVA DE VIDA DO RASTERIZADOR
+    bool ReadBackBufferBGRA(std::vector<uint8_t>& outPixels, uint32_t& outWidth, uint32_t& outHeight);
 
     int GetWidth() { return m_width; }
     int GetHeight() { return m_height; }

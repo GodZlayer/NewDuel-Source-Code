@@ -41,9 +41,18 @@ file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
     "src/RealSpace3/Include/*.h"
 )
 
-add_executable(GunzNakama WIN32 ${SOURCES})
+set(GAME_SOURCES ${SOURCES})
+list(REMOVE_ITEM GAME_SOURCES
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/cine_studio/main_cine.cpp")
 
-target_link_libraries(GunzNakama 
+set(CINE_SOURCES ${SOURCES})
+list(REMOVE_ITEM CINE_SOURCES
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp")
+
+add_executable(GunzNakama WIN32 ${GAME_SOURCES})
+add_executable(RS3CineStudio WIN32 ${CINE_SOURCES})
+
+set(COMMON_LINK_LIBS
     nakama-sdk
     ultralight
     UltralightCore
@@ -63,8 +72,17 @@ target_link_libraries(GunzNakama
     uuid
 )
 
+target_link_libraries(GunzNakama ${COMMON_LINK_LIBS})
+target_link_libraries(RS3CineStudio ${COMMON_LINK_LIBS})
+
 add_custom_command(TARGET GunzNakama POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
         "${CMAKE_CURRENT_SOURCE_DIR}/ui"
         "$<TARGET_FILE_DIR:GunzNakama>/ui"
+)
+
+add_custom_command(TARGET RS3CineStudio POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${CMAKE_CURRENT_SOURCE_DIR}/ui"
+        "$<TARGET_FILE_DIR:RS3CineStudio>/ui"
 )

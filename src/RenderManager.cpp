@@ -42,9 +42,11 @@ void RenderManager::render() {
         m_pDevice->DrawUI();
     }
 
-    // 4. Renderiza o showcase por cima da UI
-    m_pDevice->SetStandard3DStates();
-    RealSpace3::SceneManager::getInstance().drawShowcaseOverlay(m_pDevice->GetContext());
+    // 4. Renderiza showcase por cima apenas quando o modo ativo for ShowcaseOnly.
+    if (RealSpace3::SceneManager::getInstance().shouldDrawShowcaseAfterUI()) {
+        m_pDevice->SetStandard3DStates();
+        RealSpace3::SceneManager::getInstance().drawShowcaseOverlay(m_pDevice->GetContext());
+    }
 
     // 5. Exibição
     m_pDevice->Present();

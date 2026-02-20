@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ScenePackageLoader.h"
+#include "RS3RenderTypes.h"
 #include "StateManager.h"
 #include "TextureManager.h"
 #include "Types.h"
@@ -21,6 +22,7 @@ public:
     RScene(ID3D11Device* device, ID3D11DeviceContext* context);
     ~RScene();
 
+    bool LoadScenePackage(const std::string& sceneId);
     void LoadCharSelect();
     bool LoadCharSelectPackage(const std::string& sceneId);
     void LoadLobbyBasic();
@@ -29,9 +31,15 @@ public:
     void DrawShowcase(ID3D11DeviceContext* context, DirectX::FXMMATRIX viewProj, bool forceNoDepthTest);
     void Draw(ID3D11DeviceContext* context, DirectX::FXMMATRIX viewProj);
     void SetShowcaseViewportPixels(int x, int y, int width, int height);
+    void SetRenderMode(RS3RenderMode mode);
+    RS3RenderMode GetRenderMode() const;
+    bool SetCameraPose(const RS3CameraPose& pose, bool immediate);
+    void ClearCameraPose();
+    bool GetPreferredCameraPose(RS3CameraPose& outPose) const;
     bool GetPreferredCamera(DirectX::XMFLOAT3& outPos, DirectX::XMFLOAT3& outDir) const;
     bool SetCreationPreview(int sex, int face, int preset, int hair);
     void SetCreationPreviewVisible(bool visible);
+    bool SetShowcaseObjectModel(const std::string& modelId);
     bool AdjustCreationCamera(float yawDeltaDeg, float pitchDeltaDeg, float zoomDelta);
     bool AdjustCreationCharacterYaw(float yawDeltaDeg);
     bool SetCreationCameraPose(float yawDeg, float pitchDeg, float distance, float focusHeight, bool autoOrbit);
@@ -102,6 +110,7 @@ private:
         bool animate = false;
         bool skipCharacterNodeFilter = false;
         bool faceCamera = false;
+        bool applySubmeshNodeTransform = true;
         float yawOffsetDeg = 0.0f;
         float scale = 1.0f;
         DirectX::XMFLOAT3 localOffset = { 0.0f, 0.0f, 0.0f };
@@ -162,6 +171,13 @@ private:
 
     DirectX::XMFLOAT3 m_cameraPos = { 0.0f, -800.0f, 220.0f };
     DirectX::XMFLOAT3 m_cameraDir = { 0.0f, 1.0f, -0.2f };
+    DirectX::XMFLOAT3 m_cameraUp = { 0.0f, 0.0f, 1.0f };
+    float m_cameraFovDeg = 60.0f;
+    float m_cameraNearZ = 1.0f;
+    float m_cameraFarZ = 20000.0f;
+    bool m_hasCameraOverride = false;
+
+    RS3RenderMode m_renderMode = RS3RenderMode::Gameplay;
 
     bool m_hasSpawnPos = false;
     DirectX::XMFLOAT3 m_spawnPos = { 0.0f, 0.0f, 0.0f };
